@@ -30,7 +30,6 @@ from sklearn.model_selection import train_test_split
 from typing import Tuple, Dict, Any, Optional
 import logging
 from kedro.pipeline import Pipeline, node
-# Add this section:
 try:
     from .data_loading_multitable import (
         MultiTableDataLoader,
@@ -44,23 +43,6 @@ try:
 except Exception as e:
     MULTI_TABLE_AVAILABLE = False
     print(f"❌ Multi-table loader import failed: {e}")
-from pathlib import Path
-
-log = logging.getLogger(__name__)
-
-# Try to import the enhanced multi-table loader
-try:
-    from src.ml_engine.pipelines.data_loading.data_loading_multitable import (
-        MultiTableDataLoader,
-        DatasetConfig,
-        TableConfig,
-        AggregationConfig,
-        JoinConfig
-    )
-    MULTI_TABLE_AVAILABLE = True
-except ImportError:
-    MULTI_TABLE_AVAILABLE = False
-    log.warning("Multi-table loader not available, single-table mode only")
 
 
 # ════════════════════════════════════════════════════════════════════════════
