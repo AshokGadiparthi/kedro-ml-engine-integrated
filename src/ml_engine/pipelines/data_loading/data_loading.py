@@ -190,6 +190,13 @@ def load_data_auto(
     data_cfg = params.get('data_loading', {})
     mode = data_cfg.get('mode', 'single')
 
+    # DEBUG
+    print(f"DEBUG: Received params keys: {params.keys()}")
+    print(f"DEBUG: data_cfg: {data_cfg}")
+    print(f"DEBUG: mode value: '{mode}'")
+    print(f"DEBUG: mode type: {type(mode)}")
+    # END DEBUG
+
     log.info(f"\n{'='*80}")
     log.info(f"📊 DATA LOADING - MODE: {mode.upper()}")
     log.info(f"{'='*80}\n")
