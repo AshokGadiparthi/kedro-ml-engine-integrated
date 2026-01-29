@@ -74,54 +74,61 @@ data_loading:
 
   aggregations:
 
-    # Aggregate bureau table (5 records per customer on average)
+    # ✅ BUREAU - Fixed (use existing columns only)
     - table: "bureau"
-      group_by: "SK_ID_CURR"            # Group by this ID
-      prefix: "BUREAU_"                 # Add this prefix to new feature names
+      group_by: "SK_ID_CURR"
+      prefix: "BUREAU_"
       features:
-        # Feature: [aggregation_functions]
-        AMT_CREDIT_SUM: ["sum", "mean", "max", "min"]      # Total, avg, max, min credit
-        DAYS_CREDIT: ["min", "max"]                         # Earliest and latest
-        CNT_CREDIT: ["count"]                               # Number of credits
-        STATUS: ["nunique"]                                 # Different statuses
+        AMT_CREDIT_SUM: [ "sum", "mean", "max", "min" ]
+        AMT_CREDIT_SUM_DEBT: [ "sum", "mean", "max" ]
+        AMT_CREDIT_SUM_LIMIT: [ "sum", "mean" ]
+        DAYS_CREDIT: [ "min", "max", "mean" ]
+        DAYS_CREDIT_ENDDATE: [ "min", "max" ]
+        CNT_CREDIT_PROLONG: [ "sum", "mean" ]
+        CREDIT_ACTIVE: [ "nunique" ]
+        CREDIT_TYPE: [ "nunique" ]
 
-    # Aggregate previous applications (2-3 per customer on average)
+    # ✅ PREVIOUS_APPLICATION - Fixed
     - table: "previous_application"
       group_by: "SK_ID_CURR"
       prefix: "PREV_"
       features:
-        AMT_APPLICATION: ["sum", "mean", "max"]            # Application amounts
-        DAYS_DECISION: ["min", "max"]                       # Decision dates
-        NAME_CONTRACT_TYPE: ["nunique"]                     # Diverse contract types
-        FLAG_APPROVED: ["sum", "mean"]                      # Approval rate
+        AMT_APPLICATION: [ "sum", "mean", "max" ]
+        AMT_CREDIT: [ "sum", "mean", "max" ]
+        DAYS_DECISION: [ "min", "max" ]
+        NAME_CONTRACT_TYPE: [ "nunique" ]
+        NAME_CONTRACT_STATUS: [ "nunique" ]
+        CNT_PAYMENT: [ "sum", "mean" ]
 
-    # Aggregate POS cash balance (optional)
+    # ✅ POS_CASH - Fixed
     - table: "pos_cash"
       group_by: "SK_ID_CURR"
       prefix: "POS_"
       features:
-        MONTHS_BALANCE: ["count"]                           # Number of months
-        CNT_INSTALMENT: ["sum", "mean"]                     # Installments
-        AMOUNT: ["sum", "mean", "max"]                      # Amounts
+        MONTHS_BALANCE: [ "count", "min", "max" ]
+        CNT_INSTALMENT: [ "sum", "mean" ]
+        SK_DPD: [ "max", "mean" ]
 
-    # Aggregate credit card balance (optional)
+    # ✅ CREDIT_CARD - Fixed
     - table: "credit_card"
       group_by: "SK_ID_CURR"
       prefix: "CC_"
       features:
-        MONTHS_BALANCE: ["count"]
-        AMT_BALANCE: ["sum", "mean", "max"]
-        AMT_CREDIT_LIMIT_ACTUAL: ["mean", "max"]
-        AMT_DRAWINGS_ATM_CURRENT: ["sum", "mean"]
+        MONTHS_BALANCE: [ "count", "min", "max" ]
+        AMT_BALANCE: [ "sum", "mean", "max" ]
+        AMT_CREDIT_LIMIT_ACTUAL: [ "mean", "max" ]
+        AMT_DRAWINGS_ATM_CURRENT: [ "sum", "mean" ]
+        CNT_DRAWINGS_CURRENT: [ "sum", "mean" ]
 
-    # Aggregate installment payments (optional)
+    # ✅ INSTALLMENTS - Fixed
     - table: "installments"
       group_by: "SK_ID_CURR"
       prefix: "INSTALL_"
       features:
-        AMT_INSTALMENT: ["sum", "mean", "max"]
-        DAYS_ENTRY_PAYMENT: ["min", "max"]
-        AMT_PAYMENT: ["sum", "mean"]
+        AMT_INSTALMENT: [ "sum", "mean", "max" ]
+        DAYS_ENTRY_PAYMENT: [ "min", "max", "mean" ]
+        AMT_PAYMENT: [ "sum", "mean" ]
+        NUM_INSTALMENT_NUMBER: [ "max", "count" ]
 
   # ═══════════════════════════════════════════════════════════════════════════
   # STEP 5: Define joins (how to combine tables)
