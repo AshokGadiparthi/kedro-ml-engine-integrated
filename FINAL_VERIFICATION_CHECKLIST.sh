@@ -58,7 +58,7 @@ echo ""
 # Check 3: Data loading module
 echo "✓ CHECK 3: Data Loading Module"
 echo "───────────────────────────────"
-if [ -f "src/ml_engine/pipelines/data_loading/data_loading.py" ]; then
+if [ -f "src/ml_engine/pipelines/data_loading.py" ]; then
     echo "✅ data_loading.py exists"
     
     if grep -q "def create_pipeline" src/ml_engine/pipelines/data_loading.py; then
