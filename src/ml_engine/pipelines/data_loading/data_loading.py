@@ -23,7 +23,7 @@ Configuration in parameters.yml controls the mode:
 
 NO BREAKING CHANGES - Phases 2-6 work with both modes!
 """
-
+log = logging.getLogger(__name__)
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -51,7 +51,7 @@ except Exception as e:
     print(f"DEBUG: Unexpected error: {e}")
 from pathlib import Path
 
-log = logging.getLogger(__name__)
+
 
 # Try to import the enhanced multi-table loader
 try:
