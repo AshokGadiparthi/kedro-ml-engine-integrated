@@ -195,22 +195,7 @@ def get_classification_algorithms() -> Dict[str, object]:
         log.warning("⚠️ CatBoost not installed")
 
     # Stacking Classifier with OPTION D class weighting
-    try:
-        from sklearn.ensemble import StackingClassifier
-
-        stack_estimators = [
-            ('rf', RandomForestClassifier(n_estimators=100, class_weight='balanced', random_state=42, n_jobs=-1)),
-            ('gb', GradientBoostingClassifier(n_estimators=100, random_state=42)),
-            ('svc', SVC(kernel='rbf', probability=True, class_weight='balanced', random_state=42))
-        ]
-        algorithms['StackingClassifier'] = StackingClassifier(
-            estimators=stack_estimators,
-            final_estimator=LogisticRegression(max_iter=1000),
-            cv=5
-        )
-        log.info("✅ StackingClassifier loaded")
-    except Exception as e:
-        log.warning(f"⚠️ StackingClassifier failed: {e}")
+    
 
     # Fallback loading for module-level availability checks
     if XGBOOST_AVAILABLE:
