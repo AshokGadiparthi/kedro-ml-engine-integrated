@@ -40,9 +40,15 @@ try:
         JoinConfig
     )
     MULTI_TABLE_AVAILABLE = True
-except ImportError:
+    log.info("✅ Multi-table loader imported successfully")
+except ImportError as e:
     MULTI_TABLE_AVAILABLE = False
-    log.warning("Multi-table loader not available, single-table mode only")
+    log.warning(f"❌ Multi-table loader import failed: {e}")
+    print(f"DEBUG: Import error: {e}")
+except Exception as e:
+    MULTI_TABLE_AVAILABLE = False
+    log.warning(f"❌ Unexpected error importing multi-table loader: {e}")
+    print(f"DEBUG: Unexpected error: {e}")
 from pathlib import Path
 
 log = logging.getLogger(__name__)
