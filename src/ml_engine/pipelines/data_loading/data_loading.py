@@ -155,7 +155,7 @@ def split_data(
 # ════════════════════════════════════════════════════════════════════════════
 
 def load_data_auto(
-        data_cfg: Dict[str, Any]  # ✅ Changed parameter name!
+        data_cfg: Dict[str, Any]  # ✅ Parameter is data_cfg
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
     """
     AUTO-DETECTING DATA LOADER
@@ -163,39 +163,10 @@ def load_data_auto(
     Automatically detects and routes to appropriate loader:
     - Single-table mode: loads CSV/Excel, returns (X_train, X_test, y_train, y_test)
     - Multi-table mode: loads multiple tables, joins, aggregates, returns same format
-
-    Configuration in parameters.yml:
-
-    data_loading:
-      mode: "single"  # or "multi"
-      target_column: "target"
-      test_size: 0.2
-
-      # For single mode:
-      filepath: "data.csv"
-
-      # For multi mode:
-      data_directory: "data/01_raw/"
-      main_table: "main"
-      tables: [...]
-      joins: [...]
-      aggregations: [...]
-
-    Args:
-        params: Parameters dict from parameters.yml
-
-    Returns:
-        (X_train, X_test, y_train, y_test)
     """
-    data_cfg = params.get('data_loading', {})
-    mode = data_cfg.get('mode', 'single')
 
-    # DEBUG
-    print(f"DEBUG: Received params keys: {params.keys()}")
-    print(f"DEBUG: data_cfg: {data_cfg}")
-    print(f"DEBUG: mode value: '{mode}'")
-    print(f"DEBUG: mode type: {type(mode)}")
-    # END DEBUG
+    # ✅ Use data_cfg directly (no nested access!)
+    mode = data_cfg.get('mode', 'single')
 
     log.info(f"\n{'='*80}")
     log.info(f"📊 DATA LOADING - MODE: {mode.upper()}")
