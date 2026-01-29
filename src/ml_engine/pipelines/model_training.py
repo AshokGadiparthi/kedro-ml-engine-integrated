@@ -248,12 +248,13 @@ def hyperparameter_tuning(
             log.info(f"   {param}: {values}")
 
         # RandomizedSearchCV instead of GridSearchCV
+        # RandomizedSearchCV - MEMORY OPTIMIZED
         search = RandomizedSearchCV(
             model, param_dist,
-            n_iter=10,  # 30 RANDOM combinations (not 216)
-            cv=5,  # 5-fold CV
-            scoring='accuracy' if problem_type == 'classification' else 'r2',
-            n_jobs=-1,
+            n_iter=10,  # ← REDUCE from 30 to 10
+            cv=2,       # ← REDUCE from 5 to 2
+            scoring='roc_auc',  # Better for imbalanced classification
+            n_jobs=2,   # ← REDUCE from -1 to 2 cores
             random_state=42,
             verbose=1
         )
@@ -296,12 +297,13 @@ def hyperparameter_tuning(
         for param, values in param_dist.items():
             log.info(f"   {param}: {values}")
 
+        # RandomizedSearchCV - MEMORY OPTIMIZED
         search = RandomizedSearchCV(
             model, param_dist,
-            n_iter=30,  # 30 RANDOM combinations
-            cv=5,
-            scoring='r2',
-            n_jobs=-1,
+            n_iter=10,  # Keep at 10 (fast enough)
+            cv=2,       # ← REDUCE from 5 to 2
+            scoring='accuracy' if problem_type == 'classification' else 'r2',
+            n_jobs=2,   # ← REDUCE from -1 to 2 cores
             random_state=42,
             verbose=1
         )
