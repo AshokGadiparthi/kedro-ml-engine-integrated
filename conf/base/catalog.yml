@@ -1,5 +1,8 @@
 # ════════════════════════════════════════════════════════════════════════════
-# FINAL SOLUTION CATALOG - WITH PERMANENT FEATURE ENGINEERING FIXES
+# FINAL SOLUTION CATALOG - CORRECTED VERSION
+# ════════════════════════════════════════════════════════════════════════════
+# Key fix: Added y_train_raw and y_test_raw (Memory/Pickle datasets)
+# These are the actual outputs from data_loading, used by feature_selection
 # ════════════════════════════════════════════════════════════════════════════
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -40,6 +43,7 @@ cleaned_data:
 # PHASE 2: FEATURE ENGINEERING (Data Loading & Splitting)
 # ─────────────────────────────────────────────────────────────────────────────
 
+# ✅ CORRECTED: Added X_train_raw and X_test_raw (actual outputs from data_loading)
 X_train_raw:
   type: pandas.csv_dataset.CSVDataset
   filepath: data/03_primary/X_train_raw.csv
@@ -52,22 +56,29 @@ X_test_raw:
   save_args:
     index: false
 
+# ✅ CORRECTED: Added y_train_raw and y_test_raw (actual outputs from data_loading)
+# These are PickleDatasets because data_loading saves them as Series/MemoryDataset
+y_train_raw:
+  type: pickle.pickle_dataset.PickleDataset
+  filepath: data/03_primary/y_train_raw.pkl
+
+y_test_raw:
+  type: pickle.pickle_dataset.PickleDataset
+  filepath: data/03_primary/y_test_raw.pkl
+
+# ✅ CORRECTED: Aliases for feature_selection
+# feature_selection expects y_train, so we create an alias
 y_train:
-  type: pandas.csv_dataset.CSVDataset
-  filepath: data/03_primary/y_train.csv
-  save_args:
-    index: false
+  type: pickle.pickle_dataset.PickleDataset
+  filepath: data/03_primary/y_train_raw.pkl
 
 y_test:
-  type: pandas.csv_dataset.CSVDataset
-  filepath: data/03_primary/y_test.csv
-  save_args:
-    index: false
+  type: pickle.pickle_dataset.PickleDataset
+  filepath: data/03_primary/y_test_raw.pkl
 
 y_train_balanced:
   type: pickle.pickle_dataset.PickleDataset
   filepath: data/03_primary/y_train_balanced.pkl
-
 
 train_test_split_config:
   type: pickle.pickle_dataset.PickleDataset
@@ -211,7 +222,7 @@ data_summary:
   filepath: data/08_reporting/data_summary.pkl
 
 # ════════════════════════════════════════════════════════════════════════════
-# PHASE 3: MODEL TRAINING & EVALUATION (NEW)
+# PHASE 3: MODEL TRAINING & EVALUATION
 # ════════════════════════════════════════════════════════════════════════════
 
 # Simple string output from Phase 3
@@ -254,7 +265,7 @@ phase3_predictions:
     index: false
 
 # ════════════════════════════════════════════════════════════════════════════
-# PHASE 4: COMPLETE ML ALGORITHMS (50+) (NEW)
+# PHASE 4: COMPLETE ML ALGORITHMS (50+)
 # ════════════════════════════════════════════════════════════════════════════
 
 # All trained models
@@ -291,79 +302,105 @@ phase4_save_status:
   type: text.text_dataset.TextDataset
   filepath: data/06_models/phase4/phase4_save_status.txt
 
+# ════════════════════════════════════════════════════════════════════════════
+# PHASE 5: ADVANCED ANALYSIS MODULES (Available for manual use)
+# ════════════════════════════════════════════════════════════════════════════
+
 # Phase 5a: Training Strategies Module Output
 training_strategies_results:
-  type: pickle.PickleDataset
+  type: pickle.pickle_dataset.PickleDataset
   filepath: data/08_reporting/training_strategies_results.pkl
   save_args:
     protocol: 4
 
 # Phase 5b: Evaluation Metrics Module Output
 comprehensive_metrics:
-  type: pickle.PickleDataset
+  type: pickle.pickle_dataset.PickleDataset
   filepath: data/08_reporting/comprehensive_metrics.pkl
   save_args:
     protocol: 4
 
 # Alternative: Save metrics as JSON for easy reading
 comprehensive_metrics_json:
-  type: pandas.JSONDataset
+  type: pandas.json_dataset.JSONDataset
   filepath: data/08_reporting/comprehensive_metrics.json
 
 # Phase 5c: Cross-Validation Strategies Module Output
 cross_validation_results:
-  type: pickle.PickleDataset
+  type: pickle.pickle_dataset.PickleDataset
   filepath: data/08_reporting/cross_validation_results.pkl
   save_args:
     protocol: 4
 
 # Phase 5d: Model Comparison Module Output
 model_comparison_results:
-  type: pickle.PickleDataset
+  type: pickle.pickle_dataset.PickleDataset
   filepath: data/08_reporting/model_comparison_results.pkl
   save_args:
     protocol: 4
 
 # Alternative: Save comparison as CSV for Excel
 model_comparison_csv:
-  type: pandas.CSVDataset
+  type: pandas.csv_dataset.CSVDataset
   filepath: data/08_reporting/model_comparison.csv
+  save_args:
+    index: false
 
 # Phase 5e: Visualization Manager Module Output
 phase5_visualizations:
-  type: pandas.JSONDataset
+  type: pandas.json_dataset.JSONDataset
   filepath: data/08_reporting/visualizations_index.json
 
 # Phase 5f: Hyperparameter Analysis Module Output
 hyperparameter_analysis_results:
-  type: pickle.PickleDataset
+  type: pickle.pickle_dataset.PickleDataset
   filepath: data/08_reporting/hyperparameter_analysis.pkl
   save_args:
     protocol: 4
 
 # Alternative: Save sensitivity analysis as CSV
 hyperparameter_sensitivity_csv:
-  type: pandas.CSVDataset
+  type: pandas.csv_dataset.CSVDataset
   filepath: data/08_reporting/hyperparameter_sensitivity.csv
+  save_args:
+    index: false
 
 # Phase 5g: Report Generation Module Outputs
 
 # HTML Report (main output)
 report_html:
-  type: text.TextDataset
+  type: text.text_dataset.TextDataset
   filepath: data/08_reporting/report.html
 
 # JSON Report (machine-readable)
 report_json:
-  type: text.TextDataset
+  type: text.text_dataset.TextDataset
   filepath: data/08_reporting/report.json
 
 # Text Report (for email, text editors)
 report_txt:
-  type: text.TextDataset
+  type: text.text_dataset.TextDataset
   filepath: data/08_reporting/executive_summary.txt
 
 # Model Card (standardized format)
 report_model_card:
-  type: text.TextDataset
+  type: text.text_dataset.TextDataset
   filepath: data/08_reporting/model_card.md
+
+# ════════════════════════════════════════════════════════════════════════════
+# PHASE 6: ENSEMBLE METHODS
+# ════════════════════════════════════════════════════════════════════════════
+
+ensemble_models:
+  type: pickle.pickle_dataset.PickleDataset
+  filepath: data/06_models/ensemble_models.pkl
+
+ensemble_results:
+  type: pandas.csv_dataset.CSVDataset
+  filepath: data/07_model_output/ensemble_results.csv
+  save_args:
+    index: false
+
+ensemble_analysis:
+  type: pickle.pickle_dataset.PickleDataset
+  filepath: data/07_model_output/ensemble_analysis.pkl
