@@ -251,8 +251,8 @@ def hyperparameter_tuning(
         # RandomizedSearchCV - MEMORY OPTIMIZED
         search = RandomizedSearchCV(
             model, param_dist,
-            n_iter=10,  # ← REDUCE from 30 to 10
-            cv=2,       # ← REDUCE from 5 to 2
+            n_iter=3,  # ← REDUCE from 30 to 10
+            cv=1,       # ← REDUCE from 5 to 2
             scoring='roc_auc',  # Better for imbalanced classification
             n_jobs=2,   # ← REDUCE from -1 to 2 cores
             random_state=42,
@@ -300,8 +300,8 @@ def hyperparameter_tuning(
         # RandomizedSearchCV - MEMORY OPTIMIZED
         search = RandomizedSearchCV(
             model, param_dist,
-            n_iter=10,  # Keep at 10 (fast enough)
-            cv=2,       # ← REDUCE from 5 to 2
+            n_iter=3,  # Keep at 10 (fast enough)
+            cv=1,       # ← REDUCE from 5 to 2
             scoring='accuracy' if problem_type == 'classification' else 'r2',
             n_jobs=2,   # ← REDUCE from -1 to 2 cores
             random_state=42,
