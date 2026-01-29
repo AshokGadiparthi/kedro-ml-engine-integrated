@@ -23,7 +23,7 @@ Configuration in parameters.yml controls the mode:
 
 NO BREAKING CHANGES - Phases 2-6 work with both modes!
 """
-log = logging.getLogger(__name__)
+
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -40,18 +40,18 @@ try:
         JoinConfig
     )
     MULTI_TABLE_AVAILABLE = True
-    log.info("✅ Multi-table loader imported successfully")
+    print("✅ Multi-table loader imported successfully")
 except ImportError as e:
     MULTI_TABLE_AVAILABLE = False
-    log.warning(f"❌ Multi-table loader import failed: {e}")
+    print(f"❌ Multi-table loader import failed: {e}")
     print(f"DEBUG: Import error: {e}")
 except Exception as e:
     MULTI_TABLE_AVAILABLE = False
-    log.warning(f"❌ Unexpected error importing multi-table loader: {e}")
+    print(f"❌ Unexpected error importing multi-table loader: {e}")
     print(f"DEBUG: Unexpected error: {e}")
 from pathlib import Path
 
-
+log = logging.getLogger(__name__)
 
 # Try to import the enhanced multi-table loader
 try:
