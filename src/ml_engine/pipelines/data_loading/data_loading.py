@@ -41,14 +41,9 @@ try:
     )
     MULTI_TABLE_AVAILABLE = True
     print("✅ Multi-table loader imported successfully")
-except ImportError as e:
-    MULTI_TABLE_AVAILABLE = False
-    print(f"❌ Multi-table loader import failed: {e}")
-    print(f"DEBUG: Import error: {e}")
 except Exception as e:
     MULTI_TABLE_AVAILABLE = False
-    print(f"❌ Unexpected error importing multi-table loader: {e}")
-    print(f"DEBUG: Unexpected error: {e}")
+    print(f"❌ Multi-table loader import failed: {e}")
 from pathlib import Path
 
 log = logging.getLogger(__name__)
