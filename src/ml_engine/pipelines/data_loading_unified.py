@@ -36,7 +36,7 @@ log = logging.getLogger(__name__)
 
 # Try to import the enhanced multi-table loader
 try:
-    from .data_loading_multitable import (
+    from src.ml_engine.pipelines.data_loading.data_loading_multitable import (
         MultiTableDataLoader,
         DatasetConfig,
         TableConfig,
