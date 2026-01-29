@@ -1,19 +1,14 @@
 """
-PRODUCTION-GRADE FEATURE ENGINEERING PIPELINE
+PRODUCTION-GRADE FEATURE ENGINEERING PIPELINE - CORRECTED VERSION
 =====================================================================
-Replaces: src/ml_engine/pipelines/feature_engineering.py
+This version FIXES all shape mismatch issues by fitting encoders ONCE
 
-PERMANENT FIX FOR FEATURE EXPLOSION
-=====================================================================
-
-This module:
-✅ Works with ANY dataset (not just Telco)
-✅ Automatically detects and drops ID columns
-✅ Prevents one-hot encoding explosion
-✅ Controls polynomial/interaction features intelligently
-✅ Handles sparse matrices for large feature sets
-✅ Includes safeguards against feature explosion
-✅ Production-tested and maintainable
+CRITICAL FIXES:
+✅ OneHotEncoder: Fit on train only, apply to both train and test
+✅ VarianceThreshold: Fit on train only, apply to both train and test
+✅ PolynomialFeatures: Fit on train only, apply to both train and test
+✅ Column name matching: Guaranteed same columns for train and test
+✅ Shape validation: Verified X_train.shape[1] == X_test.shape[1]
 
 Key Design Principles:
 1. DROP ID columns first (customerID, user_id, etc.)
@@ -22,7 +17,7 @@ Key Design Principles:
 4. SCALE appropriately (numeric vs categorical)
 5. VALIDATE output (never > 1000 features without explicit approval)
 
-NOTE: Feature selection is handled by separate feature_selection.py pipeline
+NOTE: All transformers fitted on TRAIN only, then applied to TEST
 """
 
 import pandas as pd
@@ -72,7 +67,7 @@ def detect_id_columns(df: pd.DataFrame, threshold: float = 0.95) -> List[str]:
         is_high_cardinality = cardinality_ratio >= threshold
 
         # Check column name patterns
-        id_keywords = ['id', 'uid', 'customer', 'user', 'account', 'reference']
+        id_keywords = ['id', 'uid', 'customer', 'user', 'account', 'reference', 'sk_id']
         is_id_like = any(keyword in col.lower() for keyword in id_keywords)
 
         if is_high_cardinality or is_id_like:
@@ -91,15 +86,18 @@ def detect_id_columns(df: pd.DataFrame, threshold: float = 0.95) -> List[str]:
 
 
 # ============================================================================
-# UTILITY: SMART CATEGORICAL ENCODING (Permanent solution #2)
+# UTILITY: SMART CATEGORICAL ENCODING (Permanent solution #2) - FIX #1
 # ============================================================================
 
 def smart_categorical_encoding(
-        df: pd.DataFrame,
+        X_train: pd.DataFrame,
+        X_test: pd.DataFrame,
         categorical_cols: List[str],
         params: Dict[str, Any]
-) -> Tuple[np.ndarray, List[str]]:
+) -> Tuple[pd.DataFrame, pd.DataFrame, List[str]]:
     """
+    ✅ FIXED: Fit encoder on train, apply to both train and test
+
     Smart categorical encoding that prevents feature explosion.
 
     Strategy:
@@ -109,15 +107,16 @@ def smart_categorical_encoding(
     4. Apply label encoding as fallback
 
     Args:
-        df: DataFrame
+        X_train: Training DataFrame
+        X_test: Test DataFrame
         categorical_cols: List of categorical column names
         params: Configuration
 
     Returns:
-        (encoded_features, feature_names)
+        (X_train_encoded, X_test_encoded, feature_names)
     """
     print(f"\n{'='*80}")
-    print(f"📦 SMART CATEGORICAL ENCODING (Permanent Fix #2)")
+    print(f"📦 SMART CATEGORICAL ENCODING (Permanent Fix #2) - FIX #1")
     print(f"{'='*80}")
 
     max_categories = params.get('max_categories_to_encode', 10)
@@ -134,28 +133,26 @@ def smart_categorical_encoding(
 
     print(f"\n   Analyzing categorical columns:")
     for col in categorical_cols:
-        n_unique = df[col].nunique()
+        n_unique = X_train[col].nunique()
         print(f"      {col}: {n_unique} unique values")
 
         # Strategy based on cardinality
         if n_unique <= max_categories:
-            # Low cardinality → one-hot encode
             cols_to_encode.append(col)
             print(f"         → One-hot encode")
         elif n_unique <= 50:
-            # Medium cardinality → label encode
             cols_to_label.append(col)
             print(f"         → Label encode")
         else:
-            # High cardinality → drop (likely not useful)
             cols_to_drop.append(col)
             print(f"         → DROP (high cardinality)")
 
     # Build encoded features
-    encoded_features = []
+    encoded_features_train = []
+    encoded_features_test = []
     feature_names = []
 
-    # One-hot encode low-cardinality
+    # ✅ ONE-HOT ENCODE: Fit on train ONLY, apply to both
     if cols_to_encode:
         print(f"\n   One-hot encoding {len(cols_to_encode)} columns...")
         encoder = OneHotEncoder(
@@ -165,66 +162,98 @@ def smart_categorical_encoding(
         )
 
         try:
-            X_encoded = encoder.fit_transform(df[cols_to_encode])
-            encoded_features.append(X_encoded)
+            # Fit on train data
+            X_train_encoded = encoder.fit_transform(X_train[cols_to_encode])
+            encoded_features_train.append(X_train_encoded)
+
+            # Apply SAME encoder to test data ✅ FIX
+            X_test_encoded = encoder.transform(X_test[cols_to_encode])
+            encoded_features_test.append(X_test_encoded)
 
             # Get feature names
             encoded_names = encoder.get_feature_names_out(cols_to_encode).tolist()
             feature_names.extend(encoded_names)
 
             print(f"      ✓ Created {len(encoded_names)} features from one-hot encoding")
+            print(f"      ✓ Train encoded shape: {X_train_encoded.shape}")
+            print(f"      ✓ Test encoded shape: {X_test_encoded.shape}")
 
-            # Check if explosion happened
-            if len(feature_names) > max_features_from_encoding:
-                print(f"      ⚠️  WARNING: One-hot encoding created {len(feature_names)} features!")
-                print(f"         This might be too many. Consider reducing max_categories.")
         except Exception as e:
             print(f"      ✗ Error in one-hot encoding: {e}")
 
-    # Label encode medium-cardinality
-    X_labeled = None
+    # LABEL ENCODE: Create separate encoders for each column
+    X_train_labeled = None
+    X_test_labeled = None
     if cols_to_label:
         print(f"\n   Label encoding {len(cols_to_label)} columns...")
-        X_labeled_list = []
-        for col in cols_to_label:
-            encoder = LabelEncoder()
-            encoded = encoder.fit_transform(df[col].astype(str))
-            X_labeled_list.append(encoded)
-            feature_names.append(col)  # Keep original name
+        X_train_labeled_list = []
+        X_test_labeled_list = []
 
-        X_labeled = np.column_stack(X_labeled_list)
+        for col in cols_to_label:
+            # Fit encoder on TRAIN only ✅ FIX
+            encoder = LabelEncoder()
+            train_encoded = encoder.fit_transform(X_train[col].astype(str))
+            X_train_labeled_list.append(train_encoded)
+
+            # Apply SAME encoder to test ✅ FIX
+            test_encoded = encoder.transform(X_test[col].astype(str))
+            X_test_labeled_list.append(test_encoded)
+
+            feature_names.append(col)
+
+        X_train_labeled = np.column_stack(X_train_labeled_list)
+        X_test_labeled = np.column_stack(X_test_labeled_list)
         print(f"      ✓ Label encoded {len(cols_to_label)} features")
 
     # Combine all encoded features
-    all_encoded = []
-    if encoded_features:
-        all_encoded.extend(encoded_features)
-    if X_labeled is not None:
-        all_encoded.append(X_labeled)
+    train_combined = []
+    test_combined = []
 
-    if all_encoded:
-        X_result = np.hstack(all_encoded)
+    if encoded_features_train:
+        train_combined.extend(encoded_features_train)
+        test_combined.extend(encoded_features_test)
+    if X_train_labeled is not None:
+        train_combined.append(X_train_labeled)
+        test_combined.append(X_test_labeled)
+
+    if train_combined:
+        X_train_result = np.hstack(train_combined)
+        X_test_result = np.hstack(test_combined)
     else:
-        X_result = np.array([]).reshape(len(df), 0)
+        X_train_result = np.array([]).reshape(len(X_train), 0)
+        X_test_result = np.array([]).reshape(len(X_test), 0)
 
     print(f"\n   Result:")
     print(f"      Dropped: {len(cols_to_drop)} columns")
-    print(f"      Total encoded features: {X_result.shape[1]}")
+    print(f"      Train encoded shape: {X_train_result.shape}")
+    print(f"      Test encoded shape: {X_test_result.shape}")
+
+    # ✅ Verify shapes match
+    assert X_train_result.shape[1] == X_test_result.shape[1], \
+        f"Shape mismatch! Train: {X_train_result.shape[1]}, Test: {X_test_result.shape[1]}"
+
     print(f"{'='*80}\n")
 
-    return X_result, feature_names
+    # Convert to DataFrames
+    X_train_df = pd.DataFrame(X_train_result, columns=feature_names, index=X_train.index)
+    X_test_df = pd.DataFrame(X_test_result, columns=feature_names, index=X_test.index)
+
+    return X_train_df, X_test_df, feature_names
 
 
 # ============================================================================
-# UTILITY: SMART POLYNOMIAL FEATURES (Permanent solution #3)
+# UTILITY: SMART POLYNOMIAL FEATURES (Permanent solution #3) - FIX #2
 # ============================================================================
 
 def smart_polynomial_features(
-        X: pd.DataFrame,
+        X_train: pd.DataFrame,
+        X_test: pd.DataFrame,
         numeric_cols: List[str],
         params: Dict[str, Any]
-) -> Tuple[pd.DataFrame, List[str]]:
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
+    ✅ FIXED: Fit on train only, apply to both train and test
+
     Smart polynomial feature creation with safeguards.
 
     Rules:
@@ -234,15 +263,16 @@ def smart_polynomial_features(
     4. Skip if would exceed max features
 
     Args:
-        X: DataFrame with numeric features
+        X_train: Training DataFrame
+        X_test: Test DataFrame
         numeric_cols: List of numeric column names
         params: Configuration
 
     Returns:
-        (X_with_poly, feature_names)
+        (X_train_poly, X_test_poly)
     """
     print(f"\n{'='*80}")
-    print(f"⚡ POLYNOMIAL FEATURES (Permanent Fix #3)")
+    print(f"⚡ POLYNOMIAL FEATURES (Permanent Fix #3) - FIX #2")
     print(f"{'='*80}")
 
     create_poly = params.get('polynomial_features', False)
@@ -250,7 +280,7 @@ def smart_polynomial_features(
     if not create_poly:
         print(f"\n   ✓ Polynomial features: DISABLED")
         print(f"{'='*80}\n")
-        return X, X.columns.tolist()
+        return X_train, X_test
 
     degree = params.get('polynomial_degree', 2)
     max_poly_features = params.get('max_polynomial_features', 100)
@@ -261,48 +291,68 @@ def smart_polynomial_features(
     print(f"      Max features: {max_poly_features}")
 
     # Check if would create explosion
-    n_features_now = X.shape[1]
+    n_features_now = X_train.shape[1]
     estimated_features = n_features_now ** (1 + degree)
 
     if estimated_features > max_poly_features:
         print(f"\n   ⚠️  Would create ~{estimated_features:.0f} features (exceeds {max_poly_features})")
         print(f"   ✓ Skipping polynomial features to avoid explosion")
         print(f"{'='*80}\n")
-        return X, X.columns.tolist()
+        return X_train, X_test
 
-    # Create polynomial features
+    # Create polynomial features - Fit on train ONLY ✅ FIX
     print(f"\n   Creating degree-{degree} polynomial features...")
     poly = PolynomialFeatures(degree=degree, include_bias=False)
-    X_poly = poly.fit_transform(X)
 
-    print(f"      ✓ Created {X_poly.shape[1]} features")
+    # Fit on train
+    X_train_poly = poly.fit_transform(X_train)
+
+    # Apply SAME transformer to test ✅ FIX
+    X_test_poly = poly.transform(X_test)
+
+    print(f"      ✓ Train poly shape: {X_train_poly.shape}")
+    print(f"      ✓ Test poly shape: {X_test_poly.shape}")
+
+    # ✅ Verify shapes match
+    assert X_train_poly.shape[1] == X_test_poly.shape[1], \
+        f"Poly shape mismatch! Train: {X_train_poly.shape[1]}, Test: {X_test_poly.shape[1]}"
+
     print(f"{'='*80}\n")
 
-    return pd.DataFrame(X_poly), [f"poly_{i}" for i in range(X_poly.shape[1])]
+    # Convert to DataFrames
+    poly_cols = [f"poly_{i}" for i in range(X_train_poly.shape[1])]
+    X_train_df = pd.DataFrame(X_train_poly, columns=poly_cols, index=X_train.index)
+    X_test_df = pd.DataFrame(X_test_poly, columns=poly_cols, index=X_test.index)
+
+    return X_train_df, X_test_df
 
 
 # ============================================================================
-# UTILITY: FILTER LOW-VARIANCE FEATURES (Permanent solution #4)
+# UTILITY: FILTER LOW-VARIANCE FEATURES (Permanent solution #4) - FIX #3
 # ============================================================================
 
 def filter_low_variance_features(
-        X: pd.DataFrame,
+        X_train: pd.DataFrame,
+        X_test: pd.DataFrame,
         params: Dict[str, Any]
-) -> Tuple[pd.DataFrame, List[str]]:
+) -> Tuple[pd.DataFrame, pd.DataFrame, List[str]]:
     """
+    ✅ FIXED: Fit on train only, apply to both train and test
+
     Remove low-variance features that carry little information.
 
     Low-variance features are nearly constant and don't help prediction.
 
     Args:
-        X: DataFrame with features
+        X_train: Training DataFrame
+        X_test: Test DataFrame
         params: Configuration
 
     Returns:
-        (X_filtered, removed_columns)
+        (X_train_filtered, X_test_filtered, removed_columns)
     """
     print(f"\n{'='*80}")
-    print(f"🔬 VARIANCE FILTERING (Permanent Fix #4)")
+    print(f"🔬 VARIANCE FILTERING (Permanent Fix #4) - FIX #3")
     print(f"{'='*80}")
 
     threshold = params.get('variance_threshold', 0.01)
@@ -310,30 +360,44 @@ def filter_low_variance_features(
     print(f"\n   Configuration:")
     print(f"      Variance threshold: {threshold}")
 
-    # Apply variance threshold
+    # Fit selector on TRAIN only ✅ FIX
     selector = VarianceThreshold(threshold=threshold)
-    X_filtered = selector.fit_transform(X)
+    X_train_filtered = selector.fit_transform(X_train)
 
-    removed = X.columns[~selector.get_support()].tolist()
+    # Apply SAME selector to test ✅ FIX
+    X_test_filtered = selector.transform(X_test)
+
+    removed = X_train.columns[~selector.get_support()].tolist()
+    selected_cols = X_train.columns[selector.get_support()].tolist()
 
     print(f"\n   Result:")
-    print(f"      Features before: {X.shape[1]}")
-    print(f"      Features after: {X_filtered.shape[1]}")
+    print(f"      Features before: {X_train.shape[1]}")
+    print(f"      Train filtered shape: {X_train_filtered.shape}")
+    print(f"      Test filtered shape: {X_test_filtered.shape}")
     print(f"      Removed: {len(removed)} low-variance features")
 
     if removed:
         print(f"      Removed columns: {removed[:5]}{'...' if len(removed) > 5 else ''}")
 
+    # ✅ Verify shapes match
+    assert X_train_filtered.shape[1] == X_test_filtered.shape[1], \
+        f"Variance filter shape mismatch! Train: {X_train_filtered.shape[1]}, Test: {X_test_filtered.shape[1]}"
+
     print(f"{'='*80}\n")
 
-    # Return as DataFrame
-    X_result = pd.DataFrame(
-        X_filtered,
-        columns=X.columns[selector.get_support()].tolist(),
-        index=X.index
+    # Return as DataFrames
+    X_train_df = pd.DataFrame(
+        X_train_filtered,
+        columns=selected_cols,
+        index=X_train.index
+    )
+    X_test_df = pd.DataFrame(
+        X_test_filtered,
+        columns=selected_cols,
+        index=X_test.index
     )
 
-    return X_result, removed
+    return X_train_df, X_test_df, removed
 
 
 # ============================================================================
@@ -341,18 +405,20 @@ def filter_low_variance_features(
 # ============================================================================
 
 def validate_feature_count(
-        X: pd.DataFrame,
+        X_train: pd.DataFrame,
+        X_test: pd.DataFrame,
         max_allowed: int = 500,
         raise_error: bool = False
 ) -> bool:
     """
-    Validate that feature count hasn't exploded.
+    Validate that feature count hasn't exploded and train/test match.
 
     Feature explosion is a common issue in ML pipelines.
     This provides an early warning.
 
     Args:
-        X: DataFrame to check
+        X_train: Training DataFrame
+        X_test: Test DataFrame
         max_allowed: Maximum features allowed
         raise_error: If True, raise error when exceeded
 
@@ -363,15 +429,30 @@ def validate_feature_count(
     print(f"✔️  FEATURE EXPLOSION SAFETY CHECK (Permanent Fix #5)")
     print(f"{'='*80}")
 
-    n_features = X.shape[1]
+    n_features_train = X_train.shape[1]
+    n_features_test = X_test.shape[1]
 
-    print(f"\n   Total features: {n_features}")
+    print(f"\n   Train features: {n_features_train}")
+    print(f"   Test features: {n_features_test}")
     print(f"   Max allowed: {max_allowed}")
 
-    if n_features > max_allowed:
+    # Check if shapes match ✅ CRITICAL
+    if n_features_train != n_features_test:
+        message = (
+            f"\n   🚨 SHAPE MISMATCH!\n"
+            f"      Train: {n_features_train} features\n"
+            f"      Test: {n_features_test} features\n"
+            f"      These MUST be identical!"
+        )
+        print(message)
+        if raise_error:
+            raise ValueError(message)
+        return False
+
+    if n_features_train > max_allowed:
         message = (
             f"\n   🚨 FEATURE EXPLOSION DETECTED!\n"
-            f"      {n_features} features exceed limit of {max_allowed}\n"
+            f"      {n_features_train} features exceed limit of {max_allowed}\n"
             f"      This will cause performance issues!\n"
             f"\n   Likely causes:\n"
             f"      1. One-hot encoding of high-cardinality column\n"
@@ -389,6 +470,7 @@ def validate_feature_count(
         return False
     else:
         print(f"\n   ✓ Feature count is safe")
+        print(f"   ✓ Train and test shapes match!")
         print(f"{'='*80}\n")
         return True
 
@@ -403,15 +485,17 @@ def engineer_features(
         params: Dict[str, Any]
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
+    ✅ CORRECTED: All transformers fitted on train, applied to both
+
     Production-grade feature engineering with safeguards.
 
     Pipeline:
     1. Detect and drop ID columns
     2. Separate numeric and categorical
-    3. Smart categorical encoding
-    4. Scale numeric features
-    5. Optional polynomial features (with safety checks)
-    6. Filter low-variance features
+    3. Smart categorical encoding (fit on train, apply to test)
+    4. Scale numeric features (fit on train, apply to test)
+    5. Optional polynomial features (fit on train, apply to test)
+    6. Filter low-variance features (fit on train, apply to test)
     7. Final safety validation
 
     Args:
@@ -423,7 +507,7 @@ def engineer_features(
         (X_train_engineered, X_test_engineered)
     """
     print(f"\n\n{'='*80}")
-    print(f"🏗️  PRODUCTION FEATURE ENGINEERING PIPELINE")
+    print(f"🏗️  PRODUCTION FEATURE ENGINEERING PIPELINE (CORRECTED)")
     print(f"{'='*80}")
 
     X_train_work = X_train.copy()
@@ -434,7 +518,7 @@ def engineer_features(
     X_train_work = X_train_work.drop(columns=id_columns, errors='ignore')
     X_test_work = X_test_work.drop(columns=id_columns, errors='ignore')
 
-    print(f"\n📊 After dropping IDs: {X_train_work.shape[1]} features")
+    print(f"\n📊 After dropping IDs: Train {X_train_work.shape[1]} features, Test {X_test_work.shape[1]} features")
 
     # ===== STEP 2: IDENTIFY COLUMN TYPES =====
     numeric_cols = X_train_work.select_dtypes(
@@ -452,112 +536,102 @@ def engineer_features(
     print(f"📈 PROCESSING NUMERIC FEATURES")
     print(f"{'='*80}")
 
-    X_numeric = X_train_work[numeric_cols].copy()
+    if numeric_cols:
+        X_train_numeric = X_train_work[numeric_cols].copy()
+        X_test_numeric = X_test_work[numeric_cols].copy()
 
-    # Scale numeric features
-    scaler = StandardScaler()
-    X_numeric_scaled = scaler.fit_transform(X_numeric)
-    X_numeric_scaled_df = pd.DataFrame(
-        X_numeric_scaled,
-        columns=[f"{col}_scaled" for col in numeric_cols],
-        index=X_train_work.index
-    )
+        # ✅ FIX: Fit scaler on TRAIN only, apply to both
+        scaler = StandardScaler()
+        X_train_numeric_scaled = scaler.fit_transform(X_train_numeric)
+        X_test_numeric_scaled = scaler.transform(X_test_numeric)
 
-    # Scale test set
-    X_test_numeric = X_test_work[numeric_cols].copy()
-    X_test_numeric_scaled = scaler.transform(X_test_numeric)
-    X_test_numeric_scaled_df = pd.DataFrame(
-        X_test_numeric_scaled,
-        columns=[f"{col}_scaled" for col in numeric_cols],
-        index=X_test_work.index
-    )
-
-    print(f"   ✓ Scaled {len(numeric_cols)} numeric features")
-
-    # ===== STEP 4: SMART CATEGORICAL ENCODING =====
-    X_encoded_train, encoded_names = smart_categorical_encoding(
-        X_train_work,
-        categorical_cols,
-        params
-    )
-
-    X_encoded_test, _ = smart_categorical_encoding(
-        X_test_work,
-        categorical_cols,
-        params
-    )
-
-    # Convert to DataFrames
-    if X_encoded_train.shape[1] > 0:
-        X_encoded_train_df = pd.DataFrame(
-            X_encoded_train,
-            columns=encoded_names,
+        X_train_numeric_scaled_df = pd.DataFrame(
+            X_train_numeric_scaled,
+            columns=[f"{col}_scaled" for col in numeric_cols],
             index=X_train_work.index
         )
-        X_encoded_test_df = pd.DataFrame(
-            X_encoded_test[:, :X_encoded_train.shape[1]],
-            columns=encoded_names,
+
+        X_test_numeric_scaled_df = pd.DataFrame(
+            X_test_numeric_scaled,
+            columns=[f"{col}_scaled" for col in numeric_cols],
             index=X_test_work.index
         )
+
+        print(f"   ✓ Scaled {len(numeric_cols)} numeric features")
+        print(f"     Train shape: {X_train_numeric_scaled_df.shape}")
+        print(f"     Test shape: {X_test_numeric_scaled_df.shape}")
     else:
-        X_encoded_train_df = pd.DataFrame(index=X_train_work.index)
-        X_encoded_test_df = pd.DataFrame(index=X_test_work.index)
+        X_train_numeric_scaled_df = pd.DataFrame(index=X_train_work.index)
+        X_test_numeric_scaled_df = pd.DataFrame(index=X_test_work.index)
+
+    # ===== STEP 4: SMART CATEGORICAL ENCODING =====
+    # ✅ FIX #1: Pass both train and test, fit encoder once
+    if categorical_cols:
+        X_train_encoded_df, X_test_encoded_df, encoded_names = smart_categorical_encoding(
+            X_train_work,
+            X_test_work,
+            categorical_cols,
+            params
+        )
+    else:
+        X_train_encoded_df = pd.DataFrame(index=X_train_work.index)
+        X_test_encoded_df = pd.DataFrame(index=X_test_work.index)
 
     # ===== STEP 5: COMBINE NUMERIC + ENCODED =====
     X_train_combined = pd.concat([
-        X_numeric_scaled_df,
-        X_encoded_train_df
+        X_train_numeric_scaled_df,
+        X_train_encoded_df
     ], axis=1)
 
     X_test_combined = pd.concat([
         X_test_numeric_scaled_df,
-        X_encoded_test_df
+        X_test_encoded_df
     ], axis=1)
 
-    print(f"\n📊 After combining features: {X_train_combined.shape[1]} features")
+    print(f"\n📊 After combining features:")
+    print(f"   Train shape: {X_train_combined.shape}")
+    print(f"   Test shape: {X_test_combined.shape}")
 
     # ===== STEP 6: OPTIONAL POLYNOMIAL FEATURES =====
-    X_train_poly, poly_names = smart_polynomial_features(
+    # ✅ FIX #2: Pass both train and test, fit on train only
+    X_train_poly, X_test_poly = smart_polynomial_features(
         X_train_combined,
-        X_numeric_scaled_df.columns.tolist(),
-        params
-    )
-
-    X_test_poly, _ = smart_polynomial_features(
         X_test_combined,
-        X_numeric_scaled_df.columns.tolist(),
+        X_train_numeric_scaled_df.columns.tolist(),
         params
     )
 
-    print(f"📊 After polynomial: {X_train_poly.shape[1]} features")
+    print(f"📊 After polynomial:")
+    print(f"   Train shape: {X_train_poly.shape}")
+    print(f"   Test shape: {X_test_poly.shape}")
 
     # ===== STEP 7: VARIANCE FILTERING =====
-    X_train_filtered, removed = filter_low_variance_features(
+    # ✅ FIX #3: Pass both train and test, fit on train only
+    X_train_filtered, X_test_filtered, removed = filter_low_variance_features(
         X_train_poly,
-        params
-    )
-
-    X_test_filtered, _ = filter_low_variance_features(
         X_test_poly,
         params
     )
 
-    # Ensure test has same columns as train
-    X_test_filtered = X_test_filtered[[c for c in X_train_filtered.columns if c in X_test_filtered.columns]]
-
-    print(f"📊 After variance filter: {X_train_filtered.shape[1]} features")
+    print(f"📊 After variance filter:")
+    print(f"   Train shape: {X_train_filtered.shape}")
+    print(f"   Test shape: {X_test_filtered.shape}")
 
     # ===== STEP 8: SAFETY VALIDATION =====
     max_features = params.get('max_features_allowed', 500)
-    validate_feature_count(X_train_filtered, max_allowed=max_features, raise_error=False)
+    validate_feature_count(X_train_filtered, X_test_filtered, max_allowed=max_features, raise_error=False)
 
     # ===== FINAL REPORT =====
     print(f"\n\n{'='*80}")
     print(f"✅ FEATURE ENGINEERING COMPLETE")
     print(f"{'='*80}")
-    print(f"\n   Input shape: {X_train.shape}")
-    print(f"   Output shape: {X_train_filtered.shape}")
-    print(f"   Features created: {X_train.shape[1]} → {X_train_filtered.shape[1]}")
+    print(f"\n   Input shapes:")
+    print(f"      Train: {X_train.shape}")
+    print(f"      Test: {X_test.shape}")
+    print(f"\n   Output shapes:")
+    print(f"      Train: {X_train_filtered.shape}")
+    print(f"      Test: {X_test_filtered.shape}")
+    print(f"\n   Features: {X_train.shape[1]} → {X_train_filtered.shape[1]}")
     print(f"\n   Steps applied:")
     print(f"      ✓ Dropped ID columns")
     print(f"      ✓ Encoded categoricals smartly")
@@ -566,10 +640,10 @@ def engineer_features(
         print(f"      ✓ Added polynomial features (safely)")
     print(f"      ✓ Filtered low-variance features")
     print(f"      ✓ Validated against feature explosion")
+    print(f"\n   ✅ TRAIN AND TEST SHAPES MATCH: {X_train_filtered.shape == X_test_filtered.shape}")
     print(f"\n{'='*80}\n")
 
     return X_train_filtered, X_test_filtered
-
 
 
 # ============================================================================
@@ -583,9 +657,10 @@ def feature_selection(
         params: Dict[str, Any]
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
-    Feature selection using SelectKBest.
+    ✅ CRITICAL: This outputs BOTH X_train_selected AND X_test_selected
 
-    ⭐ CRITICAL: This outputs BOTH X_train_selected AND X_test_selected
+    Feature selection using SelectKBest.
+    Fit on train, apply to both train and test.
 
     Args:
         X_train_engineered: Engineered features
@@ -615,15 +690,17 @@ def feature_selection(
     score_func = f_classif if is_classification else f_regression
     problem_type = "Classification" if is_classification else "Regression"
 
-    print(f"   Input features: {X_train_engineered.shape[1]}")
+    print(f"   Input features:")
+    print(f"      Train: {X_train_engineered.shape}")
+    print(f"      Test: {X_test_engineered.shape}")
     print(f"   Selecting: {n_features} features")
     print(f"   Problem type: {problem_type}\n")
 
-    # Create selector
+    # Create selector - fit on TRAIN only
     k = min(n_features, X_train_engineered.shape[1])
     selector = SelectKBest(score_func=score_func, k=k)
 
-    # FIT on training data
+    # Fit on training data
     X_train_selected_array = selector.fit_transform(X_train_engineered, y_train)
     selected_features = X_train_engineered.columns[selector.get_support()].tolist()
 
@@ -634,7 +711,7 @@ def feature_selection(
         index=X_train_engineered.index
     )
 
-    # TRANSFORM test data with SAME features
+    # ✅ TRANSFORM test data with SAME features
     print(f"   Transforming test data with selected features...")
     X_test_selected_array = selector.transform(X_test_engineered)
     X_test_selected = pd.DataFrame(
@@ -643,11 +720,16 @@ def feature_selection(
         index=X_test_engineered.index
     )
 
+    # ✅ Verify shapes match
+    assert X_train_selected.shape[1] == X_test_selected.shape[1], \
+        f"Selection shape mismatch! Train: {X_train_selected.shape[1]}, Test: {X_test_selected.shape[1]}"
+
     print(f"\n   ✅ Selected {X_train_selected.shape[1]} features:")
     print(f"      {selected_features}")
     print(f"\n   Output shapes:")
     print(f"      X_train_selected: {X_train_selected.shape}")
     print(f"      X_test_selected: {X_test_selected.shape}")
+    print(f"      ✅ SHAPES MATCH: {X_train_selected.shape == X_test_selected.shape}")
     print(f"{'='*80}\n")
 
     # Return BOTH train and test
@@ -655,91 +737,7 @@ def feature_selection(
 
 
 # ============================================================================
-# OPTION D: HANDLE CLASS IMBALANCE WITH SMOTE
-# ADD THIS FUNCTION TO feature_engineering.py (at the end of the file)
-# ============================================================================
-
-def handle_class_imbalance(
-        X_train: pd.DataFrame,
-        X_test: pd.DataFrame,
-        y_train: pd.Series
-) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
-    """
-    Handle class imbalance using SMOTE (Synthetic Minority Over-sampling Technique)
-
-    IMPORTANT: Only apply SMOTE to training data!
-    Test data is left untouched to get unbiased evaluation.
-
-    Args:
-        X_train: Training features
-        X_test: Test features
-        y_train: Training labels
-
-    Returns:
-        (X_train_balanced, X_test_unchanged, y_train_balanced)
-    """
-
-    print(f"\n{'='*80}")
-    print(f"🎯 OPTION D: HANDLING CLASS IMBALANCE WITH SMOTE")
-    print(f"{'='*80}")
-
-    # Handle DataFrame input
-    if isinstance(y_train, pd.DataFrame):
-        y_train = y_train.iloc[:, 0]
-
-    # Check if classification problem
-    n_unique = y_train.nunique()
-
-    if n_unique <= 10:  # Only for classification
-        print(f"\n   Detected classification problem ({n_unique} classes)")
-
-        # Check for class imbalance
-        class_dist = y_train.value_counts().sort_index()
-        print(f"\n   Before SMOTE:")
-        for cls, cnt in class_dist.items():
-            print(f"      Class {cls}: {cnt} samples ({cnt/len(y_train)*100:.1f}%)")
-
-        try:
-            from imblearn.over_sampling import SMOTE
-
-            # Apply SMOTE ONLY to training data
-            print(f"\n   Applying SMOTE to balance classes...")
-            smote = SMOTE(random_state=42, n_jobs=-1, k_neighbors=5)
-            X_train_smote, y_train_smote = smote.fit_resample(X_train, y_train)
-
-            # Convert back to DataFrame
-            X_train_balanced = pd.DataFrame(
-                X_train_smote,
-                columns=X_train.columns,
-                index=range(len(X_train_smote))
-            )
-            y_train_balanced = pd.Series(y_train_smote, name=y_train.name)
-
-            # Display balanced distribution
-            class_dist_after = pd.Series(y_train_smote).value_counts().sort_index()
-            print(f"\n   After SMOTE:")
-            for cls, cnt in class_dist_after.items():
-                print(f"      Class {cls}: {cnt} samples ({cnt/len(y_train_smote)*100:.1f}%)")
-
-            print(f"\n   ✅ Classes balanced with SMOTE!")
-            print(f"{'='*80}\n")
-
-            # Test data is UNCHANGED - return as-is for unbiased evaluation
-            return X_train_balanced, X_test, y_train_balanced
-
-        except ImportError:
-            print(f"\n   ⚠️  imbalanced-learn not installed - SMOTE skipped")
-            print(f"   To enable SMOTE: pip install imbalanced-learn --break-system-packages")
-            print(f"{'='*80}\n")
-            return X_train, X_test, y_train
-    else:
-        print(f"\n   Regression problem ({n_unique} unique values) - SMOTE skipped")
-        print(f"{'='*80}\n")
-        return X_train, X_test, y_train
-
-
-# ============================================================================
-# PIPELINE DEFINITION - ENGINEER FEATURES ONLY
+# PIPELINE DEFINITION
 # ============================================================================
 
 def create_pipeline(**kwargs) -> Pipeline:
@@ -765,14 +763,16 @@ def create_pipeline(**kwargs) -> Pipeline:
 
 
 if __name__ == "__main__":
-    print("✅ Production-grade Feature Engineering Pipeline loaded!")
+    print("✅ CORRECTED Production-grade Feature Engineering Pipeline loaded!")
     print("   Permanent fixes for:")
     print("      • ID column explosion (auto-detect and drop)")
-    print("      • One-hot encoding explosion (smart limits)")
-    print("      • Polynomial feature explosion (degree control)")
-    print("      • Low-variance features (automatic filtering)")
-    print("      • Feature explosion validation (safety checks)")
+    print("      • One-hot encoding explosion (smart limits + SAME encoder for train/test)")
+    print("      • Polynomial feature explosion (degree control + SAME transformer)")
+    print("      • Low-variance features (automatic filtering + SAME threshold)")
+    print("      • Feature explosion validation (safety checks + shape matching)")
     print("")
-    print("   Includes:")
-    print("      • Feature selection (SelectKBest method)")
-    print("      • Outputs BOTH X_train_selected AND X_test_selected ✨")
+    print("   ✅ CRITICAL FIXES:")
+    print("      • All transformers fitted on TRAIN only")
+    print("      • SAME encoder/transformer applied to both train and test")
+    print("      • Shape validation ensures X_train.shape[1] == X_test.shape[1]")
+    print("      • Feature selection returns BOTH X_train_selected AND X_test_selected")

@@ -190,7 +190,6 @@ data_path: "data/01_raw/home_credit/"
 # TARGET & FEATURES (Required by all phases - NO CHANGE)
 # ─────────────────────────────────────────────────────────────────────────────
 
-target_column: "TARGET"                # Must match your target column name
 exclude_columns: []                    # Columns to exclude from features
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -278,6 +277,7 @@ feature_selection:
   test_size: 0.2
   correlation_threshold: 0.95
   importance_method: 'tree'
+  n_features_to_select: 56
 
 # ─────────────────────────────────────────────────────────────────────────────
 # PROBLEM TYPE DETECTION (Phase 2 & 3 - UNCHANGED)
@@ -427,3 +427,17 @@ logging:
 #
 # Expected accuracy: 85-90%
 # ════════════════════════════════════════════════════════════════════════════
+
+# ✅ ADD THIS
+data_validation:
+  check_missing: true
+  check_duplicates: true
+  check_data_types: true
+  missing_threshold: 0.5
+
+data_cleaning:
+  handle_missing: "mean"      # mean, median, forward_fill, drop
+  handle_duplicates: "drop"
+  handle_outliers: "none"     # none, iqr, zscore
+  normalize_column_names: true
+  convert_data_types: true
