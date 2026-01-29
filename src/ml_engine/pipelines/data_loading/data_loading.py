@@ -155,7 +155,7 @@ def split_data(
 # ════════════════════════════════════════════════════════════════════════════
 
 def load_data_auto(
-        params: Dict[str, Any]
+        data_cfg: Dict[str, Any]  # ✅ Changed parameter name!
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
     """
     AUTO-DETECTING DATA LOADER
