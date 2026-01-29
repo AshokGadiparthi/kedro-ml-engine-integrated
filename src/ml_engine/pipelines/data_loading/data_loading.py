@@ -44,7 +44,7 @@ except Exception as e:
     MULTI_TABLE_AVAILABLE = False
     print(f"❌ Multi-table loader import failed: {e}")
 
-
+log = logging.getLogger(__name__)
 # ════════════════════════════════════════════════════════════════════════════
 # ORIGINAL FUNCTIONS (BACKWARD COMPATIBLE)
 # ════════════════════════════════════════════════════════════════════════════
