@@ -1,0 +1,20 @@
+# ============================================================================
+# HOME CREDIT PROJECT - PARAMETERS
+# ============================================================================
+# Project-specific overrides for Home Credit dataset
+# ============================================================================
+
+# REQUIRED: Path to schema.yml for this project
+schema_path: "conf/home_credit/schema.yml"
+
+# Home Credit dataset specific parameters
+target_column: "TARGET"       # Target column name
+test_size: 0.2                # 80/20 train-test split
+random_state: 42              # For reproducibility
+
+# ============================================================================
+# NOTE:
+# - Home Credit uses 'TARGET' as target column (1=default, 0=repaid)
+# - Schema defines 7 tables with hierarchical relationships
+# - Phase 2 will automatically denormalize all 7 tables!
+# ============================================================================

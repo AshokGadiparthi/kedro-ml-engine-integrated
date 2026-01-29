@@ -1,0 +1,176 @@
+# ============================================================================
+# HOME CREDIT PROJECT - SCHEMA DEFINITION
+# ============================================================================
+# Complex multi-table dataset with hierarchical relationships
+#
+# This shows how to handle real-world data:
+# - 7 related CSV files
+# - Hierarchical relationships (3+ levels deep)
+# - Automatic denormalization
+# - Bottom-up aggregation
+# ============================================================================
+
+project: "home_credit"
+description: "Home Credit Default Risk - Multi-table loan prediction"
+
+# Main entity: Customer loan application (SK_ID_CURR)
+entity_key: "SK_ID_CURR"
+
+tables:
+
+  # ========================================================================
+  # TIER 1: ENTITY TABLE (Main table - one row per customer)
+  # ========================================================================
+  
+  application:
+    path: "data/01_raw/application_train.csv"
+    type: "entity"
+    description: "Main loan applications (307K rows, one per customer)"
+    expected_columns:
+      - SK_ID_CURR
+      - TARGET
+      - AMT_CREDIT
+      - AMT_ANNUITY
+
+
+  # ========================================================================
+  # TIER 2: DIRECT CUSTOMER HISTORY (Many rows per customer)
+  # ========================================================================
+  # These tables directly relate to the customer via SK_ID_CURR
+  
+  bureau:
+    path: "data/01_raw/bureau.csv"
+    type: "related"
+    parent: "application"
+    join_key: "SK_ID_CURR"
+    description: "Credit bureau history (1.7M rows, many per customer)"
+    aggregations:
+      DAYS_CREDIT: [mean, max, min, std]
+      CREDIT_DAY_OVERDUE: [mean, max, min]
+      AMT_CREDIT_SUM: [mean, sum, max]
+      AMT_CREDIT_SUM_DEBT: [mean, sum]
+      CREDIT_ACTIVE: [nunique]
+      CREDIT_TYPE: [nunique]
+
+
+  pos_cash_balance:
+    path: "data/01_raw/POS_CASH_balance.csv"
+    type: "related"
+    parent: "application"
+    join_key: "SK_ID_CURR"
+    description: "Point-of-sale and cash loan balances (10M rows)"
+    aggregations:
+      MONTHS_BALANCE: [mean, min, max]
+      CNT_INSTALMENT: [mean, sum]
+      SK_DPD: [mean, max]
+
+
+  credit_card_balance:
+    path: "data/01_raw/credit_card_balance.csv"
+    type: "related"
+    parent: "application"
+    join_key: "SK_ID_CURR"
+    description: "Credit card monthly balances (3.8M rows)"
+    aggregations:
+      MONTHS_BALANCE: [mean, min, max]
+      AMT_BALANCE: [mean, sum, max]
+      SK_DPD: [mean, max]
+
+
+  previous_application:
+    path: "data/01_raw/previous_application.csv"
+    type: "related"
+    parent: "application"
+    join_key: "SK_ID_CURR"
+    description: "Previous loan applications (1.3M rows)"
+    aggregations:
+      AMT_ANNUITY: [mean, sum, max]
+      AMT_APPLICATION: [mean, sum, max]
+      DAYS_DECISION: [mean, min]
+
+
+  # ========================================================================
+  # TIER 3: HIERARCHICAL HISTORY (Through intermediate tables)
+  # ========================================================================
+  # These tables relate through intermediate tables (2-level hierarchy)
+  
+  bureau_balance:
+    path: "data/01_raw/bureau_balance.csv"
+    type: "related"
+    parent: "bureau"  # NOTE: Parent is BUREAU, not APPLICATION!
+    join_key: "SK_ID_BUREAU"
+    description: "Monthly balances for bureau credits (13M rows)"
+    aggregations:
+      MONTHS_BALANCE: [mean, min, max]
+      STATUS: [nunique]
+
+
+  installments_payments:
+    path: "data/01_raw/installments_payments.csv"
+    type: "related"
+    parent: "previous_application"  # NOTE: Parent is PREVIOUS_APPLICATION!
+    join_key: "SK_ID_PREV"
+    description: "Payment history for installments (13M rows)"
+    aggregations:
+      DAYS_INSTALMENT: [mean, max]
+      AMT_INSTALMENT: [mean, sum]
+      AMT_PAYMENT: [mean, sum]
+
+
+# ============================================================================
+# DENORMALIZATION PROCESS (Automatic!)
+# ============================================================================
+#
+# Phase 2 will automatically:
+#
+# 1. Load all 7 tables
+#
+# 2. Aggregate from leaves up to root:
+#    
+#    bureau_balance (monthly) 
+#      ↓ group by SK_ID_BUREAU → aggregate
+#    bureau (aggregated monthly stats)
+#      ↓ group by SK_ID_CURR → aggregate
+#    application (with bureau stats)
+#
+#    installments_payments (monthly)
+#      ↓ group by SK_ID_PREV → aggregate
+#    previous_application (aggregated)
+#      ↓ group by SK_ID_CURR → aggregate
+#    application (add previous app stats)
+#
+#    pos_cash_balance (monthly)
+#      ↓ group by SK_ID_CURR → aggregate
+#    application (add POS stats)
+#
+#    credit_card_balance (monthly)
+#      ↓ group by SK_ID_CURR → aggregate
+#    application (add CC stats)
+#
+# 3. Final result: ONE flat table!
+#    - 307K rows (one per customer)
+#    - 1000+ features (all aggregated from 7 tables)
+#    - Ready for Phase 3 (Feature Engineering)
+#
+# ============================================================================
+
+# ============================================================================
+# NOTES
+# ============================================================================
+#
+# Aggregation functions available:
+#   mean, sum, min, max, std, var
+#   count, nunique, first, last
+#   median, quantile, skew, kurtosis
+#
+# Hierarchical relationships:
+#   - bureau_balance → bureau → application (2 levels)
+#   - installments_payments → previous_application → application (2 levels)
+#   - Others → application (1 level)
+#
+# Missing values:
+#   - Phase 2 imputes automatically:
+#     - Numeric: mean value
+#     - Categorical: mode or "MISSING"
+#
+# ============================================================================

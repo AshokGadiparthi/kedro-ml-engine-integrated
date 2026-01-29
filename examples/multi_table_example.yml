@@ -1,0 +1,91 @@
+# ════════════════════════════════════════════════════════════════════════════
+# MULTI-TABLE EXAMPLE - Home Credit Default Risk
+# ════════════════════════════════════════════════════════════════════════════
+# NEW MODE! Automatically handles multiple tables
+
+data_loading:
+  mode: "multi"
+  data_directory: "data/01_raw/home_credit/"
+  main_table: "application"
+  target_column: "TARGET"
+  test_size: 0.2
+  random_state: 42
+  stratify: true
+  
+  # Define all tables
+  tables:
+    - name: "application"
+      filepath: "application_train.csv"
+      id_column: "SK_ID_CURR"
+    
+    - name: "bureau"
+      filepath: "bureau.csv"
+      id_column: "SK_ID_CURR"
+    
+    - name: "previous_application"
+      filepath: "previous_application.csv"
+      id_column: "SK_ID_CURR"
+  
+  # Aggregations (many-to-one)
+  aggregations:
+    - table: "bureau"
+      group_by: "SK_ID_CURR"
+      prefix: "BUREAU_"
+      features:
+        AMT_CREDIT_SUM: ["sum", "mean", "max"]
+        DAYS_CREDIT: ["min", "max"]
+        CNT_CREDIT: ["count"]
+    
+    - table: "previous_application"
+      group_by: "SK_ID_CURR"
+      prefix: "PREV_"
+      features:
+        AMT_APPLICATION: ["sum", "mean", "max"]
+        DAYS_DECISION: ["min", "max"]
+  
+  # Joins
+  joins:
+    - left_table: "application"
+      right_table: "bureau"
+      left_on: "SK_ID_CURR"
+      right_on: "SK_ID_CURR"
+      how: "left"
+    
+    - left_table: "application"
+      right_table: "previous_application"
+      left_on: "SK_ID_CURR"
+      right_on: "SK_ID_CURR"
+      how: "left"
+
+# Rest of pipeline same as single-table mode!
+
+feature_engineering:
+  scaling_method: "standard"
+  categorical_encoding: "onehot"
+  handle_outliers: "clip"
+  outlier_threshold: 3.0
+
+feature_selection:
+  method: "mutual_info"
+  n_features: 50
+  correlation_threshold: 0.95
+
+model_training:
+  random_state: 42
+  cv_folds: 5
+  models:
+    logistic_regression:
+      max_iter: 1000
+    random_forest:
+      n_estimators: 100
+    lightgbm:
+      n_estimators: 100
+
+ensemble:
+  method: "voting"
+  base_models: ["logistic_regression", "random_forest", "lightgbm"]
+  weights: [0.2, 0.3, 0.5]
+
+evaluation:
+  metrics: ["accuracy", "precision", "recall", "f1", "roc_auc", "pr_auc"]
+  plot_types: ["confusion_matrix", "roc_curve", "feature_importance"]

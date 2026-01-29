@@ -1,0 +1,7 @@
+# ============================================================================
+# Local Parameters Configuration - Overrides base parameters for development
+# ============================================================================
+# Use this file to override parameters for local development
+# For production, use conf/base/parameters.yml
+
+# Development-specific parameters can go here

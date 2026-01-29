@@ -1,0 +1,184 @@
+# ════════════════════════════════════════════════════════════════════════════
+# EXAMPLE CONFIGURATION: ADULT INCOME DATASET
+# ════════════════════════════════════════════════════════════════════════════
+#
+# This is a complete, working example for the Adult dataset
+# Copy this to conf/base/parameters.yml to use with Adult data
+#
+# Dataset: adult.csv
+# Task: Binary Classification - Predict if income > $50K
+# Features: Age, education, occupation, hours worked, marital status, etc.
+#
+# ════════════════════════════════════════════════════════════════════════════
+
+# ─────────────────────────────────────────────────────────────────────────────
+# DATA PATHS
+# ─────────────────────────────────────────────────────────────────────────────
+
+data_path: "adult.csv"                      # Adult income dataset
+target_column: "income"                     # Target: >50K or <=50K
+exclude_columns: []
+
+# ─────────────────────────────────────────────────────────────────────────────
+# DATA PROCESSING
+# ─────────────────────────────────────────────────────────────────────────────
+
+data_processing:
+  handle_missing: "median"                  # Use median for Adult (has more nulls)
+  test_size: 0.2                            # 80% train, 20% test
+  random_state: 42
+  stratify: "income"                        # Preserve class distribution
+
+# ─────────────────────────────────────────────────────────────────────────────
+# VALIDATION
+# ─────────────────────────────────────────────────────────────────────────────
+
+validation:
+  check_missing: true
+  check_duplicates: true
+  check_data_types: true
+  check_column_names: true
+  missing_threshold: 0.5
+
+# ════════════════════════════════════════════════════════════════════════════
+# FEATURE ENGINEERING
+# ════════════════════════════════════════════════════════════════════════════
+
+feature_engineering:
+  # ID Column Detection
+  drop_id_columns: false                    # Adult has no explicit IDs
+  id_cardinality_threshold: 0.95
+  id_keywords:
+    - 'id'
+    - 'index'
+
+  # Polynomial Features (DISABLED)
+  polynomial_degree: 2
+  include_bias: false
+  polynomial_features: false                # Disable for Adult
+  max_polynomial_features: 50
+  max_output_features: 100
+
+  # Variance Filtering
+  variance_threshold: 0.01
+  apply_variance_filter: true
+
+  # Safety Validation
+  max_features_allowed: 150                 # Adult has ~14 features base
+  validate_feature_count: true
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CATEGORICAL HANDLING
+# ─────────────────────────────────────────────────────────────────────────────
+
+categorical:
+  encoding_method: "smart"
+  max_categories_to_onehot: 15              # Adult has many categories per feature
+  max_categories_to_label: 50
+  max_features_from_encoding: 100
+  handle_unknown: "ignore"
+  min_frequency: 1
+  drop_first_category: true
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SCALING & NORMALIZATION
+# ─────────────────────────────────────────────────────────────────────────────
+
+scaling:
+  method: "standard"                        # StandardScaler
+  scale_numeric_only: true
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FEATURE SELECTION
+# ─────────────────────────────────────────────────────────────────────────────
+
+feature_selection:
+  method: "importance"                      # Use feature importance
+  n_features: 15                            # Select top 15 features
+  importance_threshold: 0.01
+
+# ════════════════════════════════════════════════════════════════════════════
+# PROBLEM TYPE & STRATEGY
+# ════════════════════════════════════════════════════════════════════════════
+
+problem_type: "classification"              # Binary: income > 50K
+
+# ─────────────────────────────────────────────────────────────────────────────
+# MODEL TRAINING (PHASE 3)
+# ─────────────────────────────────────────────────────────────────────────────
+
+training_strategy: "path_b"
+
+baseline:
+  model_type: "logistic_regression"
+  random_state: 42
+
+hyperparameter_tuning:
+  cv_folds: 5
+  n_iter: 50
+  scoring: "roc_auc"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ALGORITHM COMPARISON (PHASE 4)
+# ─────────────────────────────────────────────────────────────────────────────
+
+algorithms_to_compare:
+  - "logistic_regression"
+  - "random_forest"
+  - "gradient_boosting"
+  - "xgboost"
+
+evaluation_metrics:
+  - "accuracy"
+  - "precision"
+  - "recall"
+  - "f1"
+  - "roc_auc"
+  - "confusion_matrix"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ENSEMBLE METHODS (PHASE 6)
+# ─────────────────────────────────────────────────────────────────────────────
+
+ensemble:
+  method: "voting"
+  voting_strategy: "soft"
+  weights: null
+
+# ─────────────────────────────────────────────────────────────────────────────
+# VISUALIZATION & REPORTING
+# ─────────────────────────────────────────────────────────────────────────────
+
+reporting:
+  generate_html_report: true
+  generate_json_report: true
+  generate_model_card: true
+  generate_plots: true
+  output_dir: "data/08_reporting"
+
+# ════════════════════════════════════════════════════════════════════════════
+# ADULT-SPECIFIC NOTES
+# ════════════════════════════════════════════════════════════════════════════
+#
+# This dataset has:
+# ✅ Clear target variable (income: >50K or <=50K)
+# ✅ Mix of numeric and categorical features
+# ✅ Some missing values (use median handling)
+# ✅ Many categorical features with multiple categories
+#
+# Adult-specific considerations:
+# - max_categories_to_onehot: 15 (occupation, education have many categories)
+# - handle_missing: "median" (more appropriate for Adult)
+# - Feature count can grow with one-hot encoding
+#
+# Expected results:
+# - Accuracy: 84-87%
+# - Training time: 3-5 minutes
+# - Best model: Usually Random Forest or Gradient Boosting
+#
+# To use:
+# 1. Ensure file exists: adult.csv
+# 2. Copy this file to: conf/base/parameters.yml
+# 3. Run: kedro run
+#
+# ════════════════════════════════════════════════════════════════════════════

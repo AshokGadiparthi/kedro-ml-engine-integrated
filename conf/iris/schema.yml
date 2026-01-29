@@ -1,0 +1,53 @@
+# ============================================================================
+# IRIS PROJECT - SCHEMA DEFINITION
+# ============================================================================
+# This schema defines how to load and process the Iris dataset.
+#
+# The Iris dataset is a simple single-table dataset:
+# - 150 samples (flowers)
+# - 4 numeric features (sepal length/width, petal length/width)
+# - 1 target (species: setosa, versicolor, virginica)
+#
+# For single-table datasets, no denormalization is needed!
+# ============================================================================
+
+project: "iris"
+description: "Iris flower classification - Simple single-table dataset"
+
+# No entity key needed for single-table dataset
+entity_key: null
+
+tables:
+  # Single table: iris
+  iris:
+    path: "data/01_raw/iris.csv"
+    type: "entity"
+    description: "Iris flower measurements (150 samples)"
+    expected_columns:
+      - sepal_length
+      - sepal_width
+      - petal_length
+      - petal_width
+      - species
+
+# ============================================================================
+# HOW THIS WORKS:
+#
+# 1. Phase 1 loads iris.csv
+#    ↓ raw_tables = {'iris': DataFrame(150, 5)}
+#
+# 2. Phase 2 processes it:
+#    - Separates features (4 numeric) from target (species)
+#    - Creates X_train (120, 4), X_test (30, 4)
+#    - Creates y_train (120,), y_test (30,)
+#    ↓
+#
+# 3. Phase 3-6 runs your existing code:
+#    - Feature engineering
+#    - Model training
+#    - Evaluation & ensemble
+#    ↓
+#
+# 4. Results: Trained classification model!
+#
+# ============================================================================

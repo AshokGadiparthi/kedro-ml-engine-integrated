@@ -1,0 +1,29 @@
+# ============================================================================
+# Kedro Data Catalog - Alternative Format (Kedro 1.1.1)
+# ============================================================================
+
+raw_data:
+  type: kedro_datasets.pandas.CSVDataSet
+  filepath: data/01_raw/data.csv
+  load_args:
+    sep: ","
+  save_args:
+    index: false
+
+validated_data:
+  type: kedro_datasets.pandas.CSVDataSet
+  filepath: data/02_intermediate/validated_data.csv
+  save_args:
+    index: false
+
+processed_data:
+  type: kedro_datasets.pandas.CSVDataSet
+  filepath: data/03_processed/processed_data.csv
+  save_args:
+    index: false
+
+final_data:
+  type: kedro_datasets.pandas.CSVDataSet
+  filepath: data/04_final/final_data.csv
+  save_args:
+    index: false

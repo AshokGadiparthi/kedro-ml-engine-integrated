@@ -1,0 +1,181 @@
+# ════════════════════════════════════════════════════════════════════════════
+# EXAMPLE CONFIGURATION: TELCO CUSTOMER CHURN DATASET
+# ════════════════════════════════════════════════════════════════════════════
+# 
+# This is a complete, working example for the Telco dataset
+# Copy this to conf/base/parameters.yml to use with Telco data
+#
+# Dataset: WA_Fn-UseC_-Telco-Customer-Churn.csv
+# Task: Binary Classification - Predict if customer will churn
+# Features: Customer tenure, monthly charges, service usage, contract type, etc.
+#
+# ════════════════════════════════════════════════════════════════════════════
+
+# ─────────────────────────────────────────────────────────────────────────────
+# DATA PATHS
+# ─────────────────────────────────────────────────────────────────────────────
+
+data_path: "WA_Fn-UseC_-Telco-Customer-Churn.csv"
+target_column: "Churn"
+exclude_columns: []
+
+# ─────────────────────────────────────────────────────────────────────────────
+# DATA PROCESSING
+# ─────────────────────────────────────────────────────────────────────────────
+
+data_processing:
+  handle_missing: "mean"              # Fill missing with mean
+  test_size: 0.2                      # 80% train, 20% test
+  random_state: 42                    # For reproducibility
+  stratify: "Churn"                   # Preserve Churn distribution
+
+# ─────────────────────────────────────────────────────────────────────────────
+# VALIDATION
+# ─────────────────────────────────────────────────────────────────────────────
+
+validation:
+  check_missing: true
+  check_duplicates: true
+  check_data_types: true
+  check_column_names: true
+  missing_threshold: 0.5
+
+# ════════════════════════════════════════════════════════════════════════════
+# FEATURE ENGINEERING
+# ════════════════════════════════════════════════════════════════════════════
+
+feature_engineering:
+  # ID Column Detection
+  drop_id_columns: true
+  id_cardinality_threshold: 0.95
+  id_keywords:
+    - 'id'
+    - 'customer'
+    - 'uid'
+
+  # Polynomial Features (DISABLED - prevent explosion)
+  polynomial_degree: 2
+  include_bias: false
+  polynomial_features: false          # Keep disabled!
+  max_polynomial_features: 50
+  max_output_features: 100
+
+  # Variance Filtering
+  variance_threshold: 0.01            # Remove near-zero variance features
+  apply_variance_filter: true
+
+  # Safety Validation
+  max_features_allowed: 200           # Safety limit for Telco features
+  validate_feature_count: true
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CATEGORICAL HANDLING
+# ─────────────────────────────────────────────────────────────────────────────
+
+categorical:
+  encoding_method: "smart"            # Auto-decide based on cardinality
+  max_categories_to_onehot: 10        # One-hot if < 10 categories
+  max_categories_to_label: 50         # Label encode if < 50 categories
+  max_features_from_encoding: 100     # Limit encoded features
+  handle_unknown: "ignore"            # Ignore unknown categories at test time
+  min_frequency: 1                    # Include all categories
+  drop_first_category: true           # Avoid multicollinearity
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SCALING & NORMALIZATION
+# ─────────────────────────────────────────────────────────────────────────────
+
+scaling:
+  method: "standard"                  # StandardScaler (mean=0, std=1)
+  scale_numeric_only: true            # Only scale numeric columns
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FEATURE SELECTION
+# ─────────────────────────────────────────────────────────────────────────────
+
+feature_selection:
+  method: "importance"                # Tree-based feature importance
+  n_features: 20                      # Select top 20 features
+  importance_threshold: 0.01          # Minimum importance score
+
+# ════════════════════════════════════════════════════════════════════════════
+# PROBLEM TYPE & STRATEGY
+# ════════════════════════════════════════════════════════════════════════════
+
+problem_type: "classification"        # Binary classification (Churn: Yes/No)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# MODEL TRAINING (PHASE 3)
+# ─────────────────────────────────────────────────────────────────────────────
+
+training_strategy: "path_b"           # PATH B: Feature scaling + advanced tuning
+
+baseline:
+  model_type: "logistic_regression"
+  random_state: 42
+
+hyperparameter_tuning:
+  cv_folds: 5                         # 5-fold cross-validation
+  n_iter: 50                          # Random search iterations
+  scoring: "roc_auc"                  # Maximize ROC-AUC
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ALGORITHM COMPARISON (PHASE 4)
+# ─────────────────────────────────────────────────────────────────────────────
+
+algorithms_to_compare:
+  - "logistic_regression"
+  - "random_forest"
+  - "gradient_boosting"
+  - "xgboost"
+
+evaluation_metrics:
+  - "accuracy"
+  - "precision"
+  - "recall"
+  - "f1"
+  - "roc_auc"
+  - "confusion_matrix"
+  - "roc_curve"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ENSEMBLE METHODS (PHASE 6)
+# ─────────────────────────────────────────────────────────────────────────────
+
+ensemble:
+  method: "voting"                    # voting, stacking, blending
+  voting_strategy: "soft"             # soft (probability), hard (class)
+  weights: null                       # Auto-weight by CV performance
+
+# ─────────────────────────────────────────────────────────────────────────────
+# VISUALIZATION & REPORTING
+# ─────────────────────────────────────────────────────────────────────────────
+
+reporting:
+  generate_html_report: true
+  generate_json_report: true
+  generate_model_card: true
+  generate_plots: true
+  output_dir: "data/08_reporting"
+
+# ════════════════════════════════════════════════════════════════════════════
+# TELCO-SPECIFIC NOTES
+# ════════════════════════════════════════════════════════════════════════════
+#
+# This dataset has:
+# ✅ Clear target variable (Churn: Yes/No)
+# ✅ Mix of numeric and categorical features
+# ✅ No obvious ID columns (customerID is needed for tracking, not features)
+# ✅ Reasonable feature count (~20 after selection)
+#
+# With this configuration:
+# - Expected accuracy: 85-90%
+# - Training time: < 5 minutes
+# - Model size: Small (suitable for production)
+#
+# To use:
+# 1. Ensure file exists: WA_Fn-UseC_-Telco-Customer-Churn.csv
+# 2. Copy this file to: conf/base/parameters.yml
+# 3. Run: kedro run
+#
+# ════════════════════════════════════════════════════════════════════════════

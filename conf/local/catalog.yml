@@ -1,0 +1,12 @@
+# ============================================================================
+# Local Catalog Configuration - Overrides base catalog for development
+# ============================================================================
+# Kedro 1.1.1 with kedro-datasets[pandas]
+# Use this file to define datasets that are only available in local development
+
+# Example of local-only dataset:
+# local_test_data:
+#   type: kedro_datasets.pandas.CSVDataSet
+#   filepath: data/test_local.csv
+#   save_args:
+#     index: false

@@ -1,0 +1,22 @@
+# ============================================================================
+# IRIS PROJECT - PARAMETERS
+# ============================================================================
+# Project-specific overrides for Iris dataset
+#
+# These override the base parameters in conf/base/parameters.yml
+# ============================================================================
+
+# REQUIRED: Path to schema.yml for this project
+schema_path: "conf/iris/schema.yml"
+
+# Iris dataset specific parameters
+target_column: "species"      # Target is 'species' (not 'TARGET')
+test_size: 0.2                # 80/20 train-test split
+random_state: 42              # For reproducibility
+
+# ============================================================================
+# NOTE:
+# - Iris uses 'species' as target (not 'TARGET')
+# - Schema path points to conf/iris/schema.yml
+# - Other parameters inherit from conf/base/parameters.yml
+# ============================================================================

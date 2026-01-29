@@ -1,0 +1,87 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ml-engine"
+version = "0.2.1"
+description = "World-class ML Engine built with Kedro 1.1.1"
+requires-python = ">=3.9"
+authors = [{name = "ML Team", email = "ml@example.com"}]
+license = {text = "MIT"}
+readme = "README.md"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [
+    "kedro>=1.1.1",
+    "pandas>=2.2.0",
+    "numpy>=1.26.4",
+    "scikit-learn>=1.4.1",
+    "xgboost>=2.0.3",
+    "pyyaml>=6.0.1",
+    "click>=8.1.7",
+    "requests>=2.31.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.4",
+    "pytest-cov>=4.1.0",
+    "pytest-mock>=3.13.0",
+    "black>=24.1.1",
+    "flake8>=7.0.0",
+    "pylint>=3.0.3",
+    "mypy>=1.8.0",
+    "isort>=5.13.2",
+    "ipython>=8.20.0",
+    "jupyter>=1.0.0",
+    "notebook>=7.0.6",
+]
+
+[tool.kedro]
+# ONLY VALID KEYS FOR KEDRO 1.1.1
+package_name = "ml_engine"
+project_name = "ml_engine"
+kedro_init_version = "1.1.1"
+source_dir = "src"
+
+[tool.setuptools]
+packages = ["ml_engine"]
+
+[tool.setuptools.package-dir]
+"" = "src"
+
+[tool.black]
+line-length = 88
+target-version = ['py39', 'py310', 'py311', 'py312']
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+line_length = 88
+
+[tool.pylint]
+max-line-length = 88
+disable = [
+    "missing-docstring",
+    "too-few-public-methods",
+]
+fail-under = 8.5
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-v --cov=src/ml_engine --cov-report=html --tb=short"
+
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true
+
+[tool.kedro_telemetry]
+project_id = "48ee4b96ba14449eaad70b7156019575"
