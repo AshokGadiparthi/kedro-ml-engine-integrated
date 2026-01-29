@@ -117,11 +117,12 @@ class MultiTableDataLoader:
         self.verbose = verbose
         self.tables: Dict[str, pd.DataFrame] = {}
         self.data: Optional[pd.DataFrame] = None
-        
-    def _log(self, msg: str):
+
+    def _log(self, msg: str, end: str = "\n"):
+        """Log a message with optional end parameter."""
         if self.verbose:
             logger.info(msg)
-            print(msg)
+            print(msg, end=end, flush=True)
     
     def load_all_tables(self) -> Dict[str, pd.DataFrame]:
         """
