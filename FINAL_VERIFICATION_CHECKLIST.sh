@@ -61,14 +61,14 @@ echo "────────────────────────�
 if [ -f "src/ml_engine/pipelines/data_loading/data_loading.py" ]; then
     echo "✅ data_loading.py exists"
     
-    if grep -q "def create_pipeline" src/ml_engine/pipelines/data_loading/data_loading.py; then
+    if grep -q "def create_pipeline" src/ml_engine/pipelines/data_loading.py; then
         echo "✅ create_pipeline() function exists"
     else
         echo "❌ create_pipeline() NOT found!"
         exit 1
     fi
     
-    if grep -q "def load_data_auto" src/ml_engine/pipelines/data_loading/data_loading.py; then
+    if grep -q "def load_data_auto" src/ml_engine/pipelines/data_loading.py; then
         echo "✅ load_data_auto() function exists"
     else
         echo "❌ load_data_auto() NOT found!"
