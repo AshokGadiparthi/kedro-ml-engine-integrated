@@ -92,6 +92,20 @@ def detect_id_columns(df: pd.DataFrame, threshold: float = 0.95) -> List[str]:
     return id_columns
 
 
+# Use handle_unknown='use_encoded_value' with unknown_value
+from sklearn.preprocessing import LabelEncoder
+
+encoder = LabelEncoder()
+encoder.fit(X_train[col].astype(str))
+
+# For unseen values, use a default value (-1 or 0)
+def safe_transform(encoder, values):
+    known_mask = np.isin(values, encoder.classes_)
+    transformed = np.zeros(len(values), dtype=int)
+    transformed[known_mask] = encoder.transform(values[known_mask])
+    transformed[~known_mask] = -1  # Unknown values get -1
+    return transformed
+
 # ============================================================================
 # UTILITY: SMART CATEGORICAL ENCODING (Permanent solution #2) - FIX #1
 # ============================================================================
@@ -203,7 +217,8 @@ def smart_categorical_encoding(
             X_train_labeled_list.append(train_encoded)
 
             # Apply SAME encoder to test ✅ FIX
-            test_encoded = encoder.transform(X_test[col].astype(str))
+            #test_encoded = encoder.transform(X_test[col].astype(str))
+            test_encoded = safe_transform(encoder, X_test[col].astype(str))
             X_test_labeled_list.append(test_encoded)
 
             feature_names.append(col)
