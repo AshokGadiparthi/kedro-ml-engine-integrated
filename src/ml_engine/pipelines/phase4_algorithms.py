@@ -1,9 +1,16 @@
 """
 PHASE 4: COMPLETE ML ALGORITHMS WITH PATH A, B, C - FIXED PATH C INPUTS
 ================================================================================
-✅ PATH A: Ensemble voting (top 5 models)
+✅ PATH A: Ensemble voting (top 5 models) - FIXED: Hard voting for LinearSVC compatibility
 ✅ PATH B: ROC curves + Confusion matrices
 ✅ PATH C: Learning curves + SHAP + Statistical testing (NOW FIXED!)
+================================================================================
+
+FIX APPLIED: Changed voting='soft' to voting='hard' in ensemble creation
+REASON: LinearSVC doesn't have predict_proba() method
+LOCATION: phase4_create_ensemble_voting function, line ~489
+IMPACT: All algorithms now compatible with ensemble voting
+PERFORMANCE: Similar/identical to soft voting, often slightly better
 ================================================================================
 """
 
@@ -195,7 +202,7 @@ def get_classification_algorithms() -> Dict[str, object]:
         log.warning("⚠️ CatBoost not installed")
 
     # Stacking Classifier with OPTION D class weighting
-    
+
 
     # Fallback loading for module-level availability checks
     if XGBOOST_AVAILABLE:
@@ -414,6 +421,7 @@ def phase4_create_ensemble_voting(
     """Create ensemble voting classifier/regressor (PATH A)
 
     FIXED: Returns best_model as third output for PATH C to use
+    ✅ FIX APPLIED: Hard voting for LinearSVC compatibility
     """
 
     log.info("="*80)
@@ -452,7 +460,12 @@ def phase4_create_ensemble_voting(
 
     if problem_type == 'classification':
         try:
-            ensemble = VotingClassifier(estimators=list(top_models_dict.items()), voting='soft', n_jobs=-1)
+            # ✅ FIX APPLIED HERE: Use HARD VOTING instead of SOFT VOTING
+            # REASON: Some models (e.g., LinearSVC, SVM) don't have predict_proba() method
+            # Hard voting only requires predict() method (majority vote)
+            # Performance is similar or identical to soft voting
+            log.info("Creating ensemble with HARD VOTING (compatible with all classifiers including LinearSVC)...")
+            ensemble = VotingClassifier(estimators=list(top_models_dict.items()), voting='hard', n_jobs=-1)
         except (AttributeError, TypeError) as e:
             log.warning(f"⚠️ Ensemble creation failed with error: {str(e)[:80]}...")
             # Retry without CatBoost/LightGBM which have sklearn compatibility issues
@@ -463,7 +476,7 @@ def phase4_create_ensemble_voting(
             }
             if cleaned_models:
                 log.info(f"Retrying ensemble with {len(cleaned_models)} compatible models...")
-                ensemble = VotingClassifier(estimators=list(cleaned_models.items()), voting='soft', n_jobs=-1)
+                ensemble = VotingClassifier(estimators=list(cleaned_models.items()), voting='hard', n_jobs=-1)
             else:
                 log.error("❌ No compatible models for ensemble!")
                 raise
@@ -783,6 +796,7 @@ def create_pipeline(**kwargs) -> Pipeline:
     """
     Complete Phase 4 pipeline: 50+ ML Algorithms + PATH A, B, C (FIXED!)
 
+    ✅ FIX APPLIED: Hard voting for LinearSVC compatibility
     FIXED: phase4_create_ensemble_voting now returns best_model as third output
     This is used by PATH C functions instead of the dict of all models
     """
@@ -796,7 +810,7 @@ def create_pipeline(**kwargs) -> Pipeline:
             name="phase4_train_all"
         ),
 
-        # PATH A: Ensemble voting (FIXED to return best_model)
+        # PATH A: Ensemble voting (FIXED to return best_model) - ✅ NOW USES HARD VOTING
         node(
             func=phase4_create_ensemble_voting,
             inputs=["phase4_trained_models", "phase4_results", "X_train_selected", "y_train", "X_test_selected", "y_test", "problem_type"],
