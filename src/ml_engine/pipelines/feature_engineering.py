@@ -115,8 +115,11 @@ def detect_id_columns_universal(df: pd.DataFrame, params: Dict[str, Any]) -> Lis
         is_mostly_unique = cardinality_ratio >= 0.95
 
         # Method 4: Low variance (IDs have low variance - they're different)
-        col_variance = df[col].var()
-        is_low_info = (col_variance < 0.01) if check_variance else False
+        # Only for numeric columns (can't calculate variance on strings) - IMPROVED FIX
+        is_low_info = False
+        if check_variance and pd.api.types.is_numeric_dtype(df[col]):
+            col_variance = df[col].var()
+            is_low_info = (col_variance < 0.01)
 
         # Method 5: Type checking
         is_numeric = pd.api.types.is_numeric_dtype(df[col])
