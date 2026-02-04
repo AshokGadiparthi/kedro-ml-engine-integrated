@@ -417,17 +417,33 @@ def universal_numeric_scaling(
     print(f"      Scaling method: {scaling_method}")
     print(f"      Outlier threshold (IQR): {outlier_threshold}")
 
+    # CRITICAL FIX: Convert string-stored numeric columns to actual numeric type
+    X_train_numeric = X_train[numeric_cols].copy()
+    X_test_numeric = X_test[numeric_cols].copy()
+
+    for col in numeric_cols:
+        try:
+            X_train_numeric[col] = pd.to_numeric(X_train_numeric[col], errors='coerce')
+            X_test_numeric[col] = pd.to_numeric(X_test_numeric[col], errors='coerce')
+        except (ValueError, TypeError):
+            pass  # Already numeric
+
     # Auto-detect best scaling method
     if scaling_method == 'auto':
         # Check for outliers
         outlier_count = 0
         for col in numeric_cols:
-            Q1 = X_train[col].quantile(0.25)
-            Q3 = X_train[col].quantile(0.75)
-            IQR = Q3 - Q1
-            outliers = ((X_train[col] < (Q1 - outlier_threshold * IQR)) |
-                        (X_train[col] > (Q3 + outlier_threshold * IQR)))
-            outlier_count += outliers.sum()
+            try:
+                Q1 = X_train_numeric[col].quantile(0.25)
+                Q3 = X_train_numeric[col].quantile(0.75)
+                IQR = Q3 - Q1
+                if IQR > 0:  # Only check if IQR is positive
+                    outliers = ((X_train_numeric[col] < (Q1 - outlier_threshold * IQR)) |
+                                (X_train_numeric[col] > (Q3 + outlier_threshold * IQR)))
+                    outlier_count += outliers.sum()
+            except (TypeError, ValueError):
+                # Skip columns that can't be processed
+                pass
 
         outlier_ratio = outlier_count / (len(X_train) * len(numeric_cols))
 
@@ -451,9 +467,9 @@ def universal_numeric_scaling(
             method = 'StandardScaler'
         print(f"   ✓ Using {method} (configured)")
 
-    # Fit on train, apply to both
-    X_train_scaled = scaler.fit_transform(X_train[numeric_cols])
-    X_test_scaled = scaler.transform(X_test[numeric_cols])
+    # Fit on train, apply to both (using converted numeric data)
+    X_train_scaled = scaler.fit_transform(X_train_numeric)
+    X_test_scaled = scaler.transform(X_test_numeric)
 
     col_names = [f"{col}_scaled" for col in numeric_cols]
     X_train_df = pd.DataFrame(X_train_scaled, columns=col_names, index=X_train.index)
