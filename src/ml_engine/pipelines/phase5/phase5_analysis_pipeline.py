@@ -59,6 +59,8 @@ def load_phase4_outputs(
         # Extract predictions
         y_pred = phase3_predictions.iloc[:, 1].values if phase3_predictions.shape[1] > 1 else phase3_predictions.values.flatten()
 
+        # Convert y_test to numpy array if it's a pandas Series (for positional indexing)
+        y_test = np.asarray(y_test)
         # Convert to numeric if needed
         if isinstance(y_test[0], str):
             classes = np.unique(y_test)
