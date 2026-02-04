@@ -156,7 +156,7 @@ except Exception as e:
 PHASE5_PIPELINE_AVAILABLE = False
 
 try:
-    from ml_engine.pipelines.phase5_analysis_pipeline import create_pipeline as create_phase5_pipeline
+    from ml_engine.pipelines.phase5.phase5_analysis_pipeline import create_pipeline as create_phase5_pipeline
     logger.info("✅ Phase 5 (phase5_analysis_pipeline) imported successfully")
     PHASE5_PIPELINE_AVAILABLE = True
 except ImportError as e:
@@ -182,7 +182,7 @@ PHASE5_REPORTING_AVAILABLE = False
 
 # Import Phase 5 modules as Python modules (NOT as pipelines)
 try:
-    from ml_engine.pipelines import training_strategies
+    from ml_engine.pipelines.phase5 import training_strategies
     logger.info("✅ Phase 5a (training_strategies) module available")
     PHASE5_TRAINING_AVAILABLE = True
 except Exception as e:
@@ -190,7 +190,7 @@ except Exception as e:
     PHASE5_TRAINING_AVAILABLE = False
 
 try:
-    from ml_engine.pipelines import evaluation_metrics
+    from ml_engine.pipelines.phase5 import evaluation_metrics
     logger.info("✅ Phase 5b (evaluation_metrics) module available")
     PHASE5_METRICS_AVAILABLE = True
 except Exception as e:
@@ -198,7 +198,7 @@ except Exception as e:
     PHASE5_METRICS_AVAILABLE = False
 
 try:
-    from ml_engine.pipelines import cross_validation_strategies
+    from ml_engine.pipelines.phase5 import cross_validation_strategies
     logger.info("✅ Phase 5c (cross_validation_strategies) module available")
     PHASE5_CV_AVAILABLE = True
 except Exception as e:
@@ -206,7 +206,7 @@ except Exception as e:
     PHASE5_CV_AVAILABLE = False
 
 try:
-    from ml_engine.pipelines import model_comparison
+    from ml_engine.pipelines.phase5 import model_comparison
     logger.info("✅ Phase 5d (model_comparison) module available")
     PHASE5_COMPARISON_AVAILABLE = True
 except Exception as e:
@@ -214,7 +214,7 @@ except Exception as e:
     PHASE5_COMPARISON_AVAILABLE = False
 
 try:
-    from ml_engine.pipelines import visualization_manager
+    from ml_engine.pipelines.phase5 import visualization_manager
     logger.info("✅ Phase 5e (visualization_manager) module available")
     PHASE5_VIZ_AVAILABLE = True
 except Exception as e:
@@ -222,7 +222,7 @@ except Exception as e:
     PHASE5_VIZ_AVAILABLE = False
 
 try:
-    from ml_engine.pipelines import hyperparameter_analysis
+    from ml_engine.pipelines.phase5 import hyperparameter_analysis
     logger.info("✅ Phase 5f (hyperparameter_analysis) module available")
     PHASE5_HYPERPARAM_AVAILABLE = True
 except Exception as e:
@@ -230,7 +230,7 @@ except Exception as e:
     PHASE5_HYPERPARAM_AVAILABLE = False
 
 try:
-    from ml_engine.pipelines import report_generator
+    from ml_engine.pipelines.phase5 import report_generator
     logger.info("✅ Phase 5g (report_generator) module available")
     PHASE5_REPORTING_AVAILABLE = True
 except Exception as e:
