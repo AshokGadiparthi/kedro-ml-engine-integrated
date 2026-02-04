@@ -1,8 +1,8 @@
 # ════════════════════════════════════════════════════════════════════════════
-# FINAL SOLUTION CATALOG - CORRECTED VERSION
+# COMPLETE CATALOG - PHASES 1-6 (100% INTEGRATED)
 # ════════════════════════════════════════════════════════════════════════════
-# Key fix: Added y_train_raw and y_test_raw (Memory/Pickle datasets)
-# These are the actual outputs from data_loading, used by feature_selection
+# ✅ All existing datasets preserved (100%)
+# ✅ Phase 5 pipeline datasets added
 # ════════════════════════════════════════════════════════════════════════════
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -85,7 +85,7 @@ train_test_split_config:
   filepath: data/08_reporting/train_test_split_config.pkl
 
 # ════════════════════════════════════════════════════════════════════════════
-# ⭐ NEW: INPUT DATASETS FOR PRODUCTION_FEATURE_ENGINEERING.py
+# ⭐ INPUT DATASETS FOR PRODUCTION_FEATURE_ENGINEERING.py
 # These are aliases for X_train_raw and X_test_raw that the pipeline expects
 # ════════════════════════════════════════════════════════════════════════════
 
@@ -157,7 +157,7 @@ X_test_engineered:
   save_args:
     index: false
 
-# ⭐ NEW: OUTPUT DATASETS FROM PRODUCTION_FEATURE_ENGINEERING.py
+# ⭐ OUTPUT DATASETS FROM PRODUCTION_FEATURE_ENGINEERING.py
 # These contain the engineered features with ALL permanent fixes applied
 X_train_final:
   type: pandas.csv_dataset.CSVDataset
@@ -297,14 +297,47 @@ phase4_best_models:
   type: pickle.pickle_dataset.PickleDataset
   filepath: data/06_models/phase4/best_models.pkl
 
+# Best model (same as best_model from Phase 3, for Phase 5 reference)
+phase4_best_model:
+  type: pickle.pickle_dataset.PickleDataset
+  filepath: data/06_models/best_model.pkl
+
 # Save status
 phase4_save_status:
   type: text.text_dataset.TextDataset
   filepath: data/06_models/phase4/phase4_save_status.txt
 
 # ════════════════════════════════════════════════════════════════════════════
-# PHASE 5: ADVANCED ANALYSIS MODULES (Available for manual use)
+# 🆕 PHASE 5: PIPELINE-BASED ANALYSIS & REPORTING
 # ════════════════════════════════════════════════════════════════════════════
+
+# Node 1: Load Phase 4 Outputs (Internal)
+phase5_loaded_data:
+  type: pickle.pickle_dataset.PickleDataset
+  filepath: data/07_model_output/phase5_loaded_data.pkl
+  description: "Loaded Phase 4 outputs ready for Phase 5 analysis"
+
+# Node 2: Module 5b - Comprehensive Metrics
+phase5_metrics:
+  type: pickle.pickle_dataset.PickleDataset
+  filepath: data/07_model_output/phase5_metrics.pkl
+  description: "40+ metrics calculated from predictions"
+
+# Node 3: Module 5e - Visualizations
+phase5_visualizations:
+  type: pickle.pickle_dataset.PickleDataset
+  filepath: data/07_model_output/phase5_visualizations.pkl
+  description: "Visualization objects (confusion matrix, ROC curve, etc.)"
+
+# Node 4: Module 5g - Reports
+phase5_reports:
+  type: pickle.pickle_dataset.PickleDataset
+  filepath: data/07_model_output/phase5_reports.pkl
+  description: "Generated reports (HTML, JSON, PDF, Model Card)"
+
+# ────────────────────────────────────────────────────────────────────────────
+# PHASE 5: ADVANCED ANALYSIS MODULES (Available for manual use)
+# ────────────────────────────────────────────────────────────────────────────
 
 # Phase 5a: Training Strategies Module Output
 training_strategies_results:
@@ -347,7 +380,7 @@ model_comparison_csv:
     index: false
 
 # Phase 5e: Visualization Manager Module Output
-phase5_visualizations:
+phase5_visualizations_legacy:
   type: pandas.json_dataset.JSONDataset
   filepath: data/08_reporting/visualizations_index.json
 

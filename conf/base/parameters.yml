@@ -1,7 +1,8 @@
 # ════════════════════════════════════════════════════════════════════════════
 # COMPLETE PARAMETERS - PHASES 1-6 (100% INTEGRATED)
 # ════════════════════════════════════════════════════════════════════════════
-# Added: Phase 6 (Ensemble Methods) configuration
+# ✅ All existing parameters preserved (100%)
+# ✅ Phase 5 parameters added
 # ════════════════════════════════════════════════════════════════════════════
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -187,7 +188,176 @@ algorithms:
   generate_summary: true
 
 # ════════════════════════════════════════════════════════════════════════════
-# 🆕 PHASE 6: ENSEMBLE METHODS (NEW!)
+# 🆕 PHASE 5: ADVANCED ANALYSIS & REPORTING (OPTIONAL PIPELINE)
+# ════════════════════════════════════════════════════════════════════════════
+
+phase5:
+  # ────────────────────────────────────────────────────────────────────────
+  # MASTER SWITCH: Enable/Disable entire Phase 5
+  # ────────────────────────────────────────────────────────────────────────
+  enabled: true  # Set to false to skip Phase 5 entirely
+
+  # Output directory for Phase 5 reports and artifacts
+  output_dir: 'data/08_reporting'
+
+  # ────────────────────────────────────────────────────────────────────────
+  # MODULE SWITCHES: Enable/Disable individual Phase 5 modules
+  # ────────────────────────────────────────────────────────────────────────
+  modules:
+    # Module 5a: Training Strategies (HEAVY - requires full training data)
+    training_strategies: false      # Disable by default (requires re-training)
+
+    # Module 5b: Comprehensive Metrics (LIGHT - recommended)
+    metrics: true                   # Calculate 40+ metrics
+
+    # Module 5c: Cross-Validation (HEAVY - requires full training data)
+    cross_validation: false         # Disable by default (heavy computation)
+
+    # Module 5d: Model Comparison (LIGHT - optional)
+    model_comparison: false         # Compare models, statistical tests
+
+    # Module 5e: Visualizations (LIGHT - recommended)
+    visualization: true             # Generate plots and charts
+
+    # Module 5f: Hyperparameter Analysis (LIGHT - optional)
+    hyperparameter_analysis: false  # Sensitivity analysis
+
+    # Module 5g: Report Generation (LIGHT - recommended)
+    reports: true                   # Generate HTML/JSON/PDF reports
+
+  # ────────────────────────────────────────────────────────────────────────
+  # MODULE-SPECIFIC PARAMETERS
+  # ────────────────────────────────────────────────────────────────────────
+
+  # Module 5a: Training Strategies
+  training_strategies:
+    strategies:
+      - stratified_k_fold          # StratifiedTrainer with k-fold CV
+      - time_series                # TimeSeriesTrainer for temporal data
+      - progressive                # ProgressiveTrainer with early stopping
+    k_fold_splits: 5               # Number of k-fold splits
+    validation_split: 0.2          # Validation split ratio
+    early_stopping_patience: 10    # Number of epochs without improvement
+    random_state: 42               # Random seed for reproducibility
+
+  # Module 5b: Metrics Calculation
+  metrics:
+    # Classification metrics (for binary/multiclass problems)
+    classification:
+      enabled: true
+      metrics:
+        - accuracy
+        - precision
+        - recall
+        - f1_score
+        - balanced_accuracy
+        - roc_auc
+        - confusion_matrix
+
+    # Regression metrics (if applicable)
+    regression:
+      enabled: false
+      metrics:
+        - mse
+        - rmse
+        - mae
+        - r2_score
+
+    # Statistical metrics
+    statistical:
+      enabled: true
+      metrics:
+        - cohen_kappa
+        - matthews_correlation
+        - specificity
+        - sensitivity
+
+  # Module 5c: Cross-Validation
+  cross_validation:
+    strategies:
+      - stratified_k_fold          # For imbalanced classification
+      - time_series                # For temporal data
+      - group_k_fold               # For grouped data
+      - leave_one_out              # LOO-CV
+      - shuffle_split              # Random shuffle splits
+    n_splits: 5                    # Number of splits
+    test_size: 0.2                 # Test set size (if applicable)
+    random_state: 42
+
+  # Module 5d: Model Comparison
+  model_comparison:
+    metrics_to_compare:
+      - accuracy
+      - precision
+      - recall
+      - f1_score
+      - roc_auc
+    statistical_tests:
+      - paired_ttest               # Paired t-test
+      - mcnemar                    # McNemar's test
+      - friedman                   # Friedman test (multiple models)
+    significance_level: 0.05       # Alpha level for statistical tests
+    create_ranking: true           # Create model ranking table
+
+  # Module 5e: Visualization
+  visualization:
+    figsize: [12, 8]               # Figure size (width, height)
+    dpi: 100                       # Resolution (dots per inch)
+    style: 'seaborn'               # Matplotlib style
+    plot_types:
+      - confusion_matrix           # Confusion matrix heatmap
+      - roc_curve                  # ROC curve (binary classification)
+      - precision_recall_curve     # PR curve
+      - learning_curves            # Learning curves (if available)
+      - feature_importance         # Feature importance (if available)
+      - residual_plot              # Residual plot (if available)
+      - calibration_plot           # Calibration plot
+      - classification_report      # Classification report heatmap
+    save_format: 'png'             # Format: png, jpg, pdf
+    save_individual: true          # Save each plot individually
+    save_combined: false           # Save all plots combined
+
+  # Module 5f: Hyperparameter Analysis
+  hyperparameter_analysis:
+    analyze_sensitivity: true      # Parameter sensitivity analysis
+    analyze_generalization_gap: true  # Analyze overfitting
+    rank_by_importance: true       # Rank parameters by importance
+    parameters_to_analyze:
+      - 'C'                        # SVM regularization
+      - 'max_depth'                # Tree depth
+      - 'n_estimators'             # Number of trees
+      - 'learning_rate'            # Learning rate
+      - 'alpha'                    # L1/L2 regularization
+
+  # Module 5g: Report Generation
+  reports:
+    # Report formats to generate
+    formats:
+      - html                       # HTML report (interactive)
+      - json                       # JSON report (machine-readable)
+      - pdf                        # PDF report (print-friendly)
+
+    # Report components
+    include_sections:
+      - executive_summary          # High-level summary
+      - metrics_table              # Detailed metrics table
+      - visualizations             # Plots and charts
+      - model_info                 # Model details
+      - hyperparameters            # Model hyperparameters
+      - feature_analysis           # Feature importance
+      - recommendations            # Improvement suggestions
+
+    # Model card generation
+    include_model_card: true       # Generate model card
+    model_card_format: 'markdown'  # markdown or json
+
+    # Report styling
+    html_theme: 'light'            # light or dark
+    include_toc: true              # Table of contents
+    include_footer: true           # Footer with metadata
+
+# ════════════════════════════════════════════════════════════════════════════
+# PHASE 6: ENSEMBLE METHODS
 # ════════════════════════════════════════════════════════════════════════════
 
 phase6:
