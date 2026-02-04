@@ -549,3 +549,29 @@ def create_phase5_pipeline(phase5_config: Dict) -> Pipeline:
             ),
         ]
     )
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# KEDRO ENTRY POINT (REQUIRED)
+# ════════════════════════════════════════════════════════════════════════════
+# This function is the required entry point for Kedro's pipeline_registry.py
+# It delegates to create_phase5_pipeline() which contains 100% of the original code
+# ════════════════════════════════════════════════════════════════════════════
+
+def create_pipeline(phase5_config: Dict = None) -> Pipeline:
+    """
+    Create Phase 5 pipeline (Kedro entry point).
+
+    This is the function name that Kedro's pipeline_registry.py expects to import.
+    It delegates to create_phase5_pipeline() which contains all the analysis logic.
+
+    Args:
+        phase5_config: Configuration dictionary (optional - will use params:phase5)
+
+    Returns:
+        Kedro Pipeline with all Phase 5 analysis nodes
+    """
+    if phase5_config is None:
+        phase5_config = {}
+
+    return create_phase5_pipeline(phase5_config)
