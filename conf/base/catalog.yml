@@ -313,27 +313,36 @@ phase4_save_status:
 
 # Node 1: Load Phase 4 Outputs (Internal)
 phase5_loaded_data:
-  type: pickle.pickle_dataset.PickleDataset
-  filepath: data/07_model_output/phase5_loaded_data.pkl
-  description: "Loaded Phase 4 outputs ready for Phase 5 analysis"
+  type: pickle.PickleDataset
+  filepath: data/08_reporting/phase5_loaded_data.pkl
 
-# Node 2: Module 5b - Comprehensive Metrics
+phase5_training_analysis:
+  type: pickle.PickleDataset
+  filepath: data/08_reporting/phase5_training_analysis.pkl
+
 phase5_metrics:
-  type: pickle.pickle_dataset.PickleDataset
-  filepath: data/07_model_output/phase5_metrics.pkl
-  description: "40+ metrics calculated from predictions"
+  type: pickle.PickleDataset
+  filepath: data/08_reporting/phase5_metrics.pkl
 
-# Node 3: Module 5e - Visualizations
+phase5_cv_analysis:
+  type: pickle.PickleDataset
+  filepath: data/08_reporting/phase5_cv_analysis.pkl
+
+phase5_model_comparison:
+  type: pickle.PickleDataset
+  filepath: data/08_reporting/phase5_model_comparison.pkl
+
 phase5_visualizations:
-  type: pickle.pickle_dataset.PickleDataset
-  filepath: data/07_model_output/phase5_visualizations.pkl
-  description: "Visualization objects (confusion matrix, ROC curve, etc.)"
+  type: pickle.PickleDataset
+  filepath: data/08_reporting/phase5_visualizations.pkl
 
-# Node 4: Module 5g - Reports
+phase5_hyperparameter_analysis:
+  type: pickle.PickleDataset
+  filepath: data/08_reporting/phase5_hyperparameter_analysis.pkl
+
 phase5_reports:
-  type: pickle.pickle_dataset.PickleDataset
-  filepath: data/07_model_output/phase5_reports.pkl
-  description: "Generated reports (HTML, JSON, PDF, Model Card)"
+  type: pickle.PickleDataset
+  filepath: data/08_reporting/phase5_reports.pkl
 
 # ────────────────────────────────────────────────────────────────────────────
 # PHASE 5: ADVANCED ANALYSIS MODULES (Available for manual use)
