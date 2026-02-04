@@ -91,7 +91,7 @@ metrics_dict = {}
 try:
     # Try to use actual evaluation_metrics module
     try:
-        from ml_engine.pipelines.evaluation_metrics import ComprehensiveMetricsCalculator
+        from ml_engine.pipelines.phase5.evaluation_metrics import ComprehensiveMetricsCalculator
         calc = ComprehensiveMetricsCalculator()
         metrics_dict = calc.evaluate_classification(y_test_numeric, y_pred_numeric)
         print(f"✅ Used Module 2: evaluation_metrics")
@@ -231,7 +231,7 @@ print("="*80)
 print("STEP 6: Generating Reports (Module 7)...\n")
 
 try:
-    from ml_engine.pipelines.report_generator import ComprehensiveReportManager
+    from ml_engine.pipelines.phase5.report_generator import ComprehensiveReportManager
 
     report = ComprehensiveReportManager("Phase1-4_Model")
 
