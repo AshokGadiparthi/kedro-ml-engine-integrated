@@ -17,7 +17,7 @@ data_loading:
   random_state: 42
   stratify: true
 
-data_path: "data/01_raw/data.csv"
+data_path: ${data_loading.filepath}
 
 # ─────────────────────────────────────────────────────────────────────────────
 # TARGET & FEATURES (Required by all phases)
