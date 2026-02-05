@@ -11,7 +11,7 @@
 
 data_loading:
   mode: "single"
-  filepath: ${oc.env:RAW_DATA_FILEPATH, ""}  # ✅ PLACEHOLDER
+  filepath: ${env:RAW_DATA_FILEPATH}  # ✅ PLACEHOLDER
   target_column: "income"  # Change to your target column name
   test_size: 0.2
   random_state: 42
