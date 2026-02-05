@@ -12,7 +12,7 @@
 raw_data:
   type: pandas.csv_dataset.CSVDataset
   #filepath: data/01_raw/data.csv
-  filepath: "${data_loading.filepath}"  # ✅ DYNAMIC from params
+  filepath: ${data_loading.filepath}  # ✅ DYNAMIC from params
   load_args:
     engine: python
 
