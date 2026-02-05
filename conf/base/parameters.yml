@@ -11,7 +11,7 @@
 
 data_loading:
   mode: "single"
-  filepath: "data/01_raw/data.csv"
+  filepath: "data/01_raw/{project_id}/{filename}.csv"  # ✅ PLACEHOLDER
   target_column: "income"  # Change to your target column name
   test_size: 0.2
   random_state: 42
