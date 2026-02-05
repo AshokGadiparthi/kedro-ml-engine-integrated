@@ -11,13 +11,15 @@
 
 data_loading:
   mode: "single"
-  filepath: ${env:RAW_DATA_FILEPATH}  # ✅ PLACEHOLDER
+  filepath: data/01_raw/dataa.csv
+  #filepath: ${env:RAW_DATA_FILEPATH}  # ✅ PLACEHOLDER
   target_column: "income"  # Change to your target column name
   test_size: 0.2
   random_state: 42
   stratify: true
 
-data_path: ${data_loading.filepath}
+#data_path: ${data_loading.filepath}
+data_path: data/01_raw/dataa.csv
 
 # ─────────────────────────────────────────────────────────────────────────────
 # TARGET & FEATURES (Required by all phases)
