@@ -394,6 +394,25 @@ def register_pipelines() -> Dict[str, Pipeline]:
             pipelines["all_with_ensemble"] = complete_1to6
             pipelines["end_to_end_full"] = complete_1to6
 
+
+            # 🆕 Phase 3-6: Training + Analysis + Ensemble (SKIP data prep)
+            if phase3_pipeline and phase4_pipeline:
+                phase3to4_pipeline = phase3_pipeline + phase4_pipeline
+
+                if phase6_pipeline:
+                    if phase5_pipeline:
+                        phase3to6_pipeline = phase3to4_pipeline + phase5_pipeline + phase6_pipeline
+                        pipelines["phase3_to_6"] = phase3to6_pipeline
+                        pipelines["training_and_analysis"] = phase3to6_pipeline
+                    else:
+                        phase3to6_pipeline = phase3to4_pipeline + phase6_pipeline
+                        pipelines["phase3_to_6"] = phase3to6_pipeline
+                        pipelines["training_and_analysis"] = phase3to6_pipeline
+                    logger.info("✅ Phase 3-6 pipeline created (training + analysis + ensemble)")
+                else:
+                    pipelines["phase3_4"] = phase3to4_pipeline
+                    logger.info("✅ Phase 3-4 pipeline created (training only)")
+
         logger.info("="*80)
         logger.info(f"✅ COMPLETE PIPELINE CREATED (Phase 1-4)")
         logger.info(f"   Phases included: {len(complete_pipeline_parts)}")
