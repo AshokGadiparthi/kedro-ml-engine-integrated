@@ -447,3 +447,8 @@ ensemble_results:
 ensemble_analysis:
   type: pickle.pickle_dataset.PickleDataset
   filepath: data/07_model_output/ensemble_analysis.pkl
+
+phase4_models:
+  type: pickle.PickleDataset
+  filepath: data/06_models/phase4_models.pkl
+  versioned: false
