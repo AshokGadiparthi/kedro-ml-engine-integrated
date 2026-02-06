@@ -348,21 +348,21 @@ def register_pipelines() -> Dict[str, Pipeline]:
 
     # 🆕 Phase 3-6: Training + Analysis + Ensemble (SKIP data prep)
     if phase3_pipeline and phase4_pipeline:
-        phase3to4_pipeline = phase3_pipeline + phase4_pipeline
+        # Start with Phase 3 + 4
+        phase3to6_pipeline = phase3_pipeline + phase4_pipeline
 
+        # Add Phase 5 if available
+        if phase5_pipeline:
+            phase3to6_pipeline = phase3to6_pipeline + phase5_pipeline
+
+        # Add Phase 6 if available
         if phase6_pipeline:
-            if phase5_pipeline:
-                phase3to6_pipeline = phase3to4_pipeline + phase5_pipeline + phase6_pipeline
-                pipelines["phase3_to_6"] = phase3to6_pipeline
-                pipelines["training_and_analysis"] = phase3to6_pipeline
-            else:
-                phase3to6_pipeline = phase3to4_pipeline + phase6_pipeline
-                pipelines["phase3_to_6"] = phase3to6_pipeline
-                pipelines["training_and_analysis"] = phase3to6_pipeline
-            logger.info("✅ Phase 3-6 pipeline created (training + analysis + ensemble)")
-        else:
-            pipelines["phase3_4"] = phase3to4_pipeline
-            logger.info("✅ Phase 3-4 pipeline created (training only)")
+            phase3to6_pipeline = phase3to6_pipeline + phase6_pipeline
+
+        # ✅ ALWAYS register it (even if 5 & 6 aren't available)
+        pipelines["phase3_to_6"] = phase3to6_pipeline
+        pipelines["training_and_analysis"] = phase3to6_pipeline
+        logger.info("✅ Phase 3-6 pipeline created")
 
     # ════════════════════════════════════════════════════════════════════════
     # BUILD COMPLETE PIPELINE (Phase 1-4) - GUARANTEED
